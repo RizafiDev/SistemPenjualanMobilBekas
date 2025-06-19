@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Str;
+use App\Models\FotoMobil;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Mobil extends Model
 {
@@ -188,5 +190,119 @@ class Mobil extends Model
     public function getSudahDihentikan()
     {
         return !is_null($this->tahun_akhir) || $this->status === 'dihentikan';
+    }
+    public function fotoMobils(): HasMany
+    {
+        return $this->hasMany(FotoMobil::class);
+    }
+
+    /**
+     * Relasi untuk mendapatkan foto gambar saja, diurutkan berdasarkan urutan tampil
+     */
+    public function gambarMobils(): HasMany
+    {
+        return $this->hasMany(FotoMobil::class)
+            ->where('jenis_media', 'gambar')
+            ->orderBy('urutan_tampil', 'asc');
+    }
+
+    /**
+     * Relasi untuk mendapatkan video mobil
+     */
+    public function videoMobils(): HasMany
+    {
+        return $this->hasMany(FotoMobil::class)
+            ->where('jenis_media', 'video')
+            ->orderBy('urutan_tampil', 'asc');
+    }
+
+    /**
+     * Relasi untuk mendapatkan brosur mobil
+     */
+    public function brosurMobils(): HasMany
+    {
+        return $this->hasMany(FotoMobil::class)
+            ->where('jenis_media', 'brosur')
+            ->orderBy('urutan_tampil', 'asc');
+    }
+
+    /**
+     * Relasi untuk mendapatkan thumbnail mobil
+     */
+    public function thumbnailMobil(): HasMany
+    {
+        return $this->hasMany(FotoMobil::class)
+            ->where('jenis_media', 'gambar')
+            ->where('jenis_gambar', 'thumbnail')
+            ->orderBy('urutan_tampil', 'asc');
+    }
+
+    /**
+     * Accessor untuk mendapatkan thumbnail utama
+     */
+    public function getThumbnailUtamaAttribute()
+    {
+        return $this->thumbnailMobil()->first();
+    }
+
+    /**
+     * Accessor untuk mendapatkan semua foto eksterior
+     */
+    public function getFotoEksteriorAttribute()
+    {
+        return $this->gambarMobils()
+            ->where('jenis_gambar', 'eksterior')
+            ->get();
+    }
+
+    /**
+     * Accessor untuk mendapatkan semua foto interior
+     */
+    public function getFotoInteriorAttribute()
+    {
+        return $this->gambarMobils()
+            ->where('jenis_gambar', 'interior')
+            ->get();
+    }
+
+    /**
+     * Accessor untuk mendapatkan semua foto fitur
+     */
+    public function getFotoFiturAttribute()
+    {
+        return $this->gambarMobils()
+            ->where('jenis_gambar', 'fitur')
+            ->get();
+    }
+
+    /**
+     * Accessor untuk mendapatkan galeri foto
+     */
+    public function getGaleriFotoAttribute()
+    {
+        return $this->gambarMobils()
+            ->where('jenis_gambar', 'galeri')
+            ->get();
+    }
+
+    /**
+     * Method untuk mendapatkan foto berdasarkan jenis
+     */
+    public function getFotoByJenis(string $jenisGambar)
+    {
+        return $this->gambarMobils()
+            ->where('jenis_gambar', $jenisGambar)
+            ->get();
+    }
+
+    /**
+     * Method untuk mendapatkan semua media (gambar, video, brosur)
+     */
+    public function getAllMedia()
+    {
+        return $this->fotoMobils()
+            ->orderBy('jenis_media', 'asc')
+            ->orderBy('urutan_tampil', 'asc')
+            ->get();
     }
 }

@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
+use Filament\Forms\Components\Repeater;
 
 class MobilResource extends Resource
 {
@@ -144,6 +145,102 @@ class MobilResource extends Resource
                             ->columnSpanFull()
                             ->placeholder('Fitur-fitur unggulan yang dimiliki mobil ini...')
                             ->helperText('Pisahkan setiap fitur dengan enter atau bullet point'),
+                    ])
+                    ->collapsible(),
+
+                Forms\Components\Section::make('Foto & Media')
+                    ->schema([
+                        Repeater::make('fotoMobils')
+                            ->label('Foto & Media')
+                            ->relationship()
+                            ->schema([
+                                Forms\Components\FileUpload::make('path_file')
+                                    ->label('File Media')
+                                    ->directory('mobil-media')
+                                    ->acceptedFileTypes([
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/gif',
+                                        'image/webp',
+                                        'video/mp4',
+                                        'video/mov',
+                                        'video/avi',
+                                        'application/pdf'
+                                    ])
+                                    ->maxSize(50 * 1024)
+                                    ->image()
+                                    ->imageEditor()
+                                    ->imageResizeMode('cover')
+                                    ->imageCropAspectRatio(null)
+                                    ->imageResizeTargetWidth('1920')
+                                    ->imageResizeTargetHeight('1080')
+                                    ->required()
+                                    ->columnSpanFull(),
+
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\Select::make('jenis_media')
+                                            ->label('Jenis Media')
+                                            ->options([
+                                                'gambar' => 'Gambar',
+                                                'video' => 'Video',
+                                                'brosur' => 'Brosur',
+                                            ])
+                                            ->required()
+                                            ->reactive()
+                                            ->afterStateUpdated(fn(callable $set) => $set('jenis_gambar', null)),
+
+                                        Forms\Components\Select::make('jenis_gambar')
+                                            ->label('Jenis Gambar')
+                                            ->options([
+                                                'eksterior' => 'Eksterior',
+                                                'interior' => 'Interior',
+                                                'fitur' => 'Fitur',
+                                                'thumbnail' => 'Thumbnail',
+                                                'galeri' => 'Galeri',
+                                            ])
+                                            ->visible(fn(callable $get) => $get('jenis_media') === 'gambar')
+                                            ->nullable(),
+
+                                        Forms\Components\TextInput::make('urutan_tampil')
+                                            ->label('Urutan Tampil')
+                                            ->numeric()
+                                            ->default(0)
+                                            ->minValue(0)
+                                            ->maxValue(999),
+
+                                        Forms\Components\TextInput::make('teks_alternatif')
+                                            ->label('Teks Alternatif (Alt Text)')
+                                            ->maxLength(255),
+                                    ]),
+
+                                Forms\Components\Textarea::make('keterangan')
+                                    ->label('Keterangan')
+                                    ->rows(2)
+                                    ->maxLength(500)
+                                    ->columnSpanFull(),
+                            ])
+                            ->itemLabel(fn(array $state): ?string => $state['jenis_media'] ?? null)
+                            ->collapsible()
+                            ->collapseAllAction(
+                                fn($action) => $action->label('Ciutkan Semua')
+                            )
+                            ->expandAllAction(
+                                fn($action) => $action->label('Luaskan Semua')
+                            )
+                            ->deleteAction(
+                                fn($action) => $action->label('Hapus Media')
+                            )
+                            ->addAction(
+                                fn($action) => $action->label('Tambah Media')
+                            )
+                            ->reorderAction(
+                                fn($action) => $action->label('Ubah Urutan')
+                            )
+                            ->defaultItems(0)
+                            ->maxItems(10)
+                            ->columnSpanFull()
+                            ->orderColumn('urutan_tampil'),
                     ])
                     ->collapsible(),
             ]);
