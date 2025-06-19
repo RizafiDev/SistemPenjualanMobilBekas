@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -32,6 +31,8 @@ return new class extends Migration
             $table->json('kelengkapan')->nullable();
             $table->json('riwayat_perbaikan')->nullable();
             $table->json('dokumen')->nullable(); // BPKB, STNK, dll
+            $table->json('foto_kondisi')->nullable(); // Kolom baru
+            $table->json('kondisi_fitur')->nullable();
             $table->softDeletes();
             $table->timestamps();
 
