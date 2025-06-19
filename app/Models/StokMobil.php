@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StokMobil extends Model
@@ -72,6 +73,11 @@ class StokMobil extends Model
     public function varian(): BelongsTo
     {
         return $this->belongsTo(Varian::class);
+    }
+
+    public function riwayatServis(): HasMany
+    {
+        return $this->hasMany(RiwayatServis::class);
     }
 
     // Accessors

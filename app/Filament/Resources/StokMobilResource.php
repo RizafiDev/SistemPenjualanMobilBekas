@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use App\Filament\Resources\StokMobilResource\RelationManagers\RiwayatServisRelationManager;
 
 class StokMobilResource extends Resource
 {
@@ -357,7 +358,7 @@ class StokMobilResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RiwayatServisRelationManager::class,
         ];
     }
 
