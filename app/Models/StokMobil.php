@@ -136,4 +136,126 @@ class StokMobil extends Model
     {
         return $this->laba_kotor - $this->total_biaya_service;
     }
+    // RELASI BARU UNTUK JANJI TEMU
+    public function janjiTemus(): HasMany
+    {
+        return $this->hasMany(JanjiTemu::class);
+    }
+
+    // Relasi janji temu yang masih aktif (belum selesai/batal)
+    public function janjiTemusAktif(): HasMany
+    {
+        return $this->hasMany(JanjiTemu::class)
+            ->whereIn('status', ['pending', 'dikonfirmasi', 'terjadwal']);
+    }
+
+    // Relasi janji temu hari ini
+    public function janjiTemusHariIni(): HasMany
+    {
+        return $this->hasMany(JanjiTemu::class)
+            ->whereDate('waktu_mulai', today())
+            ->whereIn('status', ['dikonfirmasi', 'terjadwal']);
+    }
+
+    // ACCESSOR & METHODS UNTUK JANJI TEMU
+
+    // Cek apakah mobil sedang ada janji temu
+    public function hasActiveAppointment(): bool
+    {
+        return $this->janjiTemusAktif()->exists();
+    }
+
+    // Cek apakah mobil ada janji temu hari ini
+    public function hasTodayAppointment(): bool
+    {
+        return $this->janjiTemusHariIni()->exists();
+    }
+
+    // Get janji temu terdekat
+    public function getNextAppointment()
+    {
+        return $this->janjiTemusAktif()
+            ->where('waktu_mulai', '>=', now())
+            ->orderBy('waktu_mulai')
+            ->first();
+    }
+
+    // Get total janji temu untuk mobil ini
+    public function getTotalAppointments(): int
+    {
+        return $this->janjiTemus()->count();
+    }
+
+    // Get jumlah test drive yang sudah dilakukan
+    public function getTotalTestDrives(): int
+    {
+        return $this->janjiTemus()
+            ->where('jenis', 'test_drive')
+            ->where('status', 'selesai')
+            ->count();
+    }
+
+    // SCOPE UNTUK FILTER BERDASARKAN JANJI TEMU
+
+    // Mobil yang tersedia untuk janji temu (tidak ada janji aktif)
+    public function scopeAvailableForAppointment($query)
+    {
+        return $query->whereDoesntHave('janjiTemusAktif');
+    }
+
+    // Mobil yang sedang ada janji temu
+    public function scopeWithActiveAppointment($query)
+    {
+        return $query->whereHas('janjiTemusAktif');
+    }
+
+    // Mobil yang sering di-test drive
+    public function scopePopularForTestDrive($query, $limit = 10)
+    {
+        return $query->withCount([
+            'janjiTemus as test_drive_count' => function ($query) {
+                $query->where('jenis', 'test_drive')->where('status', 'selesai');
+            }
+        ])
+            ->orderBy('test_drive_count', 'desc')
+            ->limit($limit);
+    }
+
+    // ACCESSOR UNTUK DISPLAY
+
+    // Nama lengkap mobil untuk display
+    public function getNamaLengkapAttribute(): string
+    {
+        $mobil = $this->mobil;
+        $varian = $this->varian;
+
+        return "{$mobil->merk} {$mobil->model} " .
+            ($varian ? "{$varian->nama} " : "") .
+            "{$this->tahun} - {$this->warna}";
+    }
+
+    // Status availability untuk janji temu
+    public function getAvailabilityStatusAttribute(): string
+    {
+        if ($this->status !== 'tersedia') {
+            return 'Tidak Tersedia';
+        }
+
+        if ($this->hasActiveAppointment()) {
+            return 'Ada Janji Temu';
+        }
+
+        return 'Tersedia';
+    }
+
+    // Warna badge untuk status availability
+    public function getAvailabilityColorAttribute(): string
+    {
+        return match ($this->availability_status) {
+            'Tersedia' => 'success',
+            'Ada Janji Temu' => 'warning',
+            'Tidak Tersedia' => 'danger',
+            default => 'gray'
+        };
+    }
 }
