@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Carbon\Carbon;
 
@@ -94,6 +95,11 @@ class Penjualan extends Model
         return $this->belongsTo(Karyawan::class);
     }
 
+    public function pembayarans(): HasMany
+    {
+        return $this->hasMany(Pembayaran::class);
+    }
+
     // Accessors
     public function getFormattedHargaJualAttribute(): string
     {
@@ -155,6 +161,25 @@ class Penjualan extends Model
     public function getLeasingBankLabelAttribute(): string
     {
         return $this->leasing_bank ? (self::LEASING_BANKS[$this->leasing_bank] ?? $this->leasing_bank) : '-';
+    }
+
+    public function getTotalPembayaranAttribute(): float
+    {
+        return $this->pembayarans()->sum('jumlah');
+    }
+
+    public function getSisaPembayaranAttribute(): float
+    {
+        return $this->total - $this->total_pembayaran;
+    }
+
+    public function getPersentaseProgressPembayaranAttribute(): float
+    {
+        if ($this->total == 0) {
+            return 0;
+        }
+
+        return ($this->total_pembayaran / $this->total) * 100;
     }
 
     // Mutators
@@ -222,7 +247,7 @@ class Penjualan extends Model
     public function getSisaBayar(): float
     {
         if (!$this->isKredit()) {
-            return 0;
+            return $this->sisa_pembayaran;
         }
 
         return $this->total - ($this->uang_muka ?? 0);
@@ -241,6 +266,30 @@ class Penjualan extends Model
         }
 
         return ($this->diskon / $this->harga_jual) * 100;
+    }
+
+    public function isPaidOff(): bool
+    {
+        return $this->total_pembayaran >= $this->total;
+    }
+
+    public function hasPartialPayment(): bool
+    {
+        return $this->total_pembayaran > 0 && $this->total_pembayaran < $this->total;
+    }
+
+    public function getLastPaymentDate(): ?Carbon
+    {
+        $lastPayment = $this->pembayarans()
+            ->orderBy('tanggal_bayar', 'desc')
+            ->first();
+
+        return $lastPayment ? $lastPayment->tanggal_bayar : null;
+    }
+
+    public function getPembayaranByJenis(string $jenis)
+    {
+        return $this->pembayarans()->where('jenis', $jenis)->get();
     }
 
     // Scopes
@@ -289,6 +338,33 @@ class Penjualan extends Model
     public function scopeWithSales($query)
     {
         return $query->whereNotNull('karyawan_id');
+    }
+
+    public function scopeWithPayments($query)
+    {
+        return $query->with([
+            'pembayarans' => function ($query) {
+                $query->orderBy('tanggal_bayar', 'desc');
+            }
+        ]);
+    }
+
+    public function scopePaidOff($query)
+    {
+        return $query->whereHas('pembayarans', function ($q) {
+            $q->selectRaw('penjualan_id, SUM(jumlah) as total_bayar')
+                ->groupBy('penjualan_id')
+                ->havingRaw('total_bayar >= (SELECT total FROM penjualans WHERE id = penjualan_id)');
+        });
+    }
+
+    public function scopePartialPayment($query)
+    {
+        return $query->whereHas('pembayarans', function ($q) {
+            $q->selectRaw('penjualan_id, SUM(jumlah) as total_bayar')
+                ->groupBy('penjualan_id')
+                ->havingRaw('total_bayar > 0 AND total_bayar < (SELECT total FROM penjualans WHERE id = penjualan_id)');
+        });
     }
 
     public function scopeSearch($query, $search)

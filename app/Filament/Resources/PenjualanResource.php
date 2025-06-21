@@ -23,6 +23,7 @@ use Filament\Forms\Components\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Support\HtmlString;
 use Filament\Support\Colors\Color;
+use App\Filament\Resources\PenjualanResource\RelationManagers\PembayaransRelationManager;
 
 class PenjualanResource extends Resource
 {
@@ -600,7 +601,7 @@ class PenjualanResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            PembayaransRelationManager::class,
         ];
     }
 
