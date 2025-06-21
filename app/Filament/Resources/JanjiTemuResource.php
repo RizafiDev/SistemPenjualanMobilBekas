@@ -71,11 +71,11 @@ class JanjiTemuResource extends Resource
                                     ->mapWithKeys(function ($stok) {
                                         $mobil = $stok->mobil;
                                         $varian = $stok->varian;
-                                        $merek = $mobil?->merek?->nama ?? '-';
-                                        $namaMobil = $mobil?->nama ?? '-';
-                                        $varianNama = $varian?->nama ? ' - ' . $varian->nama : '';
+                                        $merek = $mobil?->merek?->nama ?? '';
+                                        $namaMobil = $mobil?->nama ?? '';
+                                        $varianNama = $varian?->nama ? ' ' . $varian->nama : '';
                                         $warna = $stok->warna ? ' - ' . $stok->warna : '';
-                                        $label = "{$merek} - {$namaMobil}{$varianNama}{$warna}";
+                                        $label = "{$merek} {$namaMobil}{$varianNama}{$warna}";
                                         return [$stok->id => $label];
                                     });
                             })

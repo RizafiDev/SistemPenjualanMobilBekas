@@ -224,14 +224,20 @@ class StokMobil extends Model
     // ACCESSOR UNTUK DISPLAY
 
     // Nama lengkap mobil untuk display
-    public function getNamaLengkapAttribute(): string
+    public function getNamaLengkapPenjualanAttribute(): string
     {
         $mobil = $this->mobil;
         $varian = $this->varian;
 
-        return "{$mobil->merk} {$mobil->model} " .
-            ($varian ? "{$varian->nama} " : "") .
-            "{$this->tahun} - {$this->warna}";
+        // Ambil nama merek dari relasi mobil->merek->nama
+        $merek = $mobil?->merek?->nama ?? '';
+        $model = $mobil?->nama ?? '';
+        $varianNama = $varian?->nama ?? '';
+        $tahun = $this->tahun ?? '';
+        $warna = $this->warna ?? '';
+
+        // Gabungkan tanpa tanda -
+        return trim("{$merek} {$varianNama} {$model} {$tahun} {$warna}");
     }
 
     // Status availability untuk janji temu
