@@ -3,6 +3,7 @@
 
 use App\Http\Controllers\Auth\KaryawanAuthController;
 use App\Http\Controllers\Karyawan\AbsensiController;
+use App\Http\Controllers\Karyawan\CutiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PenjualanController;
 use App\Http\Controllers\PenggajianController;
@@ -23,54 +24,90 @@ Route::get('/login', function () {
     return redirect()->route('karyawan.login');
 })->name('login');
 
-// Routes untuk Authentication Karyawan
+/*
+|--------------------------------------------------------------------------
+| Karyawan Routes
+|--------------------------------------------------------------------------
+*/
 Route::prefix('karyawan')->name('karyawan.')->group(function () {
 
-    // Routes yang tidak memerlukan authentication
-    Route::middleware(['guest:karyawan', 'web'])->group(function () {
+    // Guest routes (hanya bisa diakses jika belum login)
+    Route::middleware(['guest:karyawan'])->group(function () {
         Route::get('/login', [KaryawanAuthController::class, 'showLoginForm'])->name('login');
         Route::post('/login', [KaryawanAuthController::class, 'login'])->name('login.post');
-
-        // Redirect root karyawan path ke login jika belum authenticated
-        Route::get('/', function () {
-            return redirect()->route('karyawan.login');
-        });
     });
 
-    // Routes yang memerlukan authentication karyawan
-    Route::middleware(['web', 'auth:karyawan'])->group(function () {
+    // Authenticated routes (hanya bisa diakses jika sudah login)
+    Route::middleware(['auth:karyawan'])->group(function () {
+
+        // Dashboard - redirect ke absensi
         Route::get('/dashboard', [KaryawanAuthController::class, 'dashboard'])->name('dashboard');
+
+        // Logout
         Route::post('/logout', [KaryawanAuthController::class, 'logout'])->name('logout');
 
-        // Routes untuk Absensi
-        Route::prefix('absensi')->name('absensi.')->group(function () {
-            Route::get('/', [AbsensiController::class, 'index'])->name('index');
-            Route::post('/masuk', [AbsensiController::class, 'absenMasuk'])->name('masuk');
-            Route::post('/pulang', [AbsensiController::class, 'absenPulang'])->name('pulang');
-            Route::get('/riwayat', [AbsensiController::class, 'riwayat'])->name('riwayat');
+        // Default karyawan route - redirect ke absensi
+        Route::get('/', function () {
+            return redirect()->route('karyawan.absensi.index');
         });
 
-        // Pengajuan Cuti
-        Route::post('/cuti/ajukan', [\App\Http\Controllers\Karyawan\CutiController::class, 'ajukan'])->name('cuti.ajukan');
+        // Absensi routes
+        Route::prefix('absensi')->name('absensi.')->controller(AbsensiController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/masuk', 'absenMasuk')->name('masuk');
+            Route::post('/pulang', 'absenPulang')->name('pulang');
+            Route::get('/riwayat', 'riwayat')->name('riwayat');
+        });
+
+        // Cuti routes
+        Route::prefix('cuti')->name('cuti.')->controller(CutiController::class)->group(function () {
+            Route::post('/ajukan', 'ajukan')->name('ajukan');
+            Route::get('/riwayat', 'riwayat')->name('riwayat');
+        });
+
+        // Catch-all untuk route karyawan yang tidak valid - redirect ke absensi
+        Route::fallback(function () {
+            return redirect()->route('karyawan.absensi.index')
+                ->with('info', 'Halaman yang Anda cari tidak ditemukan. Dialihkan ke panel absensi.');
+        });
+    });
+
+    // Redirect root karyawan ke login jika guest, ke absensi jika authenticated
+    Route::get('/', function () {
+        return auth('karyawan')->check()
+            ? redirect()->route('karyawan.absensi.index')
+            : redirect()->route('karyawan.login');
     });
 });
 
-// Route fallback untuk handle 404
-Route::fallback(function () {
-    return response()->view('errors.404', [], 404);
+/*
+|--------------------------------------------------------------------------
+| Other Routes (Penggajian & Penjualan)
+|--------------------------------------------------------------------------
+*/
+Route::middleware(['auth'])->group(function () {
+    // Penggajian routes
+    Route::get('/penggajian/{penggajian}/preview', [PenggajianController::class, 'preview'])->name('penggajian.preview');
+    Route::get('/penggajian/{penggajian}/print', [PenggajianController::class, 'print'])->name('penggajian.print');
+    Route::get('/penggajian/{penggajian}/download', [PenggajianController::class, 'download'])->name('penggajian.download');
+
+    // Penjualan routes
+    Route::get('/penjualan/{penjualan}/print', [PenjualanController::class, 'print'])->name('penjualan.print');
+    Route::get('/penjualan/{penjualan}/download', [PenjualanController::class, 'downloadPdf'])->name('penjualan.download');
 });
 
-Route::get('/penggajian/{penggajian}/preview', [PenggajianController::class, 'preview'])->name('penggajian.preview');
-Route::get('/penggajian/{penggajian}/print', [PenggajianController::class, 'print'])->name('penggajian.print');
-Route::get('/penggajian/{penggajian}/download', [PenggajianController::class, 'download'])->name('penggajian.download');
+/*
+|--------------------------------------------------------------------------
+| Global Fallback
+|--------------------------------------------------------------------------
+*/
+Route::fallback(function () {
+    // Jika user adalah karyawan yang sudah login, redirect ke absensi
+    if (auth('karyawan')->check()) {
+        return redirect()->route('karyawan.absensi.index')
+            ->with('warning', 'Halaman yang Anda cari tidak ditemukan.');
+    }
 
-// Route untuk print invoice penjualan
-Route::get('/penjualan/{penjualan}/print', [PenjualanController::class, 'print'])
-    ->name('penjualan.print')
-    ->middleware(['auth']);
-
-
-// Route untuk download PDF invoice
-Route::get('/penjualan/{penjualan}/download', [PenjualanController::class, 'downloadPdf'])
-    ->name('penjualan.download')
-    ->middleware(['auth']);
+    // Jika bukan karyawan atau belum login, tampilkan 404
+    return response()->view('errors.404', [], 404);
+});
