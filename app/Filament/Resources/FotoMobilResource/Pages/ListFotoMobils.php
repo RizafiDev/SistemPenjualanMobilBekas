@@ -10,6 +10,7 @@ use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Forms;
 use Filament\Notifications\Notification;
+use App\Filament\Resources\FotoMobilResource\Widgets\FotoMobilStatsWidget;
 
 class ListFotoMobils extends ListRecords
 {
@@ -17,6 +18,13 @@ class ListFotoMobils extends ListRecords
 
     protected static string $resource = FotoMobilResource::class;
 
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            FotoMobilStatsWidget::class,
+        ];
+    }
     protected function getHeaderActions(): array
     {
         return [
@@ -241,10 +249,5 @@ class ListFotoMobils extends ListRecords
                 }),
         ];
     }
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            \App\Filament\Widgets\FotoMobilStatsWidget::class,
-        ];
-    }
+
 }

@@ -79,39 +79,73 @@ class ViewPenggajian extends ViewRecord
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Karyawan')
+                Section::make('👤 Informasi Karyawan')
+                    ->description('Detail informasi karyawan')
+                    ->icon('heroicon-o-user')
+                    ->iconColor('primary')
                     ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextEntry::make('karyawan.nama_lengkap')
-                                    ->label('Nama Karyawan'),
+                                    ->label('Nama Karyawan')
+                                    ->icon('heroicon-o-identification')
+                                    ->copyable()
+                                    ->weight('bold')
+                                    ->size('lg'),
 
                                 TextEntry::make('karyawan.nip')
-                                    ->label('NIP'),
+                                    ->label('NIP')
+                                    ->icon('heroicon-o-hashtag')
+                                    ->copyable()
+                                    ->badge()
+                                    ->color('gray'),
 
                                 TextEntry::make('karyawan.jabatan')
-                                    ->label('Jabatan'),
+                                    ->label('Jabatan')
+                                    ->icon('heroicon-o-briefcase')
+                                    ->badge()
+                                    ->color('info'),
 
                                 TextEntry::make('karyawan.departemen')
-                                    ->label('Departemen'),
+                                    ->label('Departemen')
+                                    ->icon('heroicon-o-building-office')
+                                    ->badge()
+                                    ->color('warning'),
                             ])
-                    ]),
+                    ])
+                    ->collapsible(),
 
-                Section::make('Informasi Penggajian')
+                Section::make('📋 Informasi Penggajian')
+                    ->description('Detail periode dan status penggajian')
+                    ->icon('heroicon-o-calendar-days')
+                    ->iconColor('success')
                     ->schema([
                         Grid::make(3)
                             ->schema([
                                 TextEntry::make('periode')
                                     ->label('Periode')
-                                    ->formatStateUsing(fn($state) => \Carbon\Carbon::createFromFormat('Y-m', $state)->format('F Y')),
+                                    ->icon('heroicon-o-calendar')
+                                    ->formatStateUsing(fn($state) => \Carbon\Carbon::createFromFormat('Y-m', $state)->format('F Y'))
+                                    ->badge()
+                                    ->color('primary')
+                                    ->size('lg'),
 
                                 TextEntry::make('tanggal_gaji')
                                     ->label('Tanggal Gaji')
-                                    ->date('d F Y'),
+                                    ->icon('heroicon-o-clock')
+                                    ->date('d F Y')
+                                    ->badge()
+                                    ->color('info'),
 
                                 TextEntry::make('status')
                                     ->label('Status')
+                                    ->icon(fn(string $state): string => match ($state) {
+                                        'draft' => 'heroicon-o-pencil',
+                                        'dibayar' => 'heroicon-o-check-circle',
+                                        'batal' => 'heroicon-o-x-circle',
+                                    })
                                     ->badge()
+                                    ->size('lg')
                                     ->color(fn(string $state): string => match ($state) {
                                         'draft' => 'gray',
                                         'dibayar' => 'success',
@@ -121,95 +155,146 @@ class ViewPenggajian extends ViewRecord
                             ])
                     ]),
 
-                Section::make('Komponen Gaji')
+                Section::make('💰 Komponen Penghasilan')
+                    ->description('Rincian penghasilan karyawan')
+                    ->icon('heroicon-o-currency-dollar')
+                    ->iconColor('success')
                     ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextEntry::make('gaji_pokok')
                                     ->label('Gaji Pokok')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-banknotes')
+                                    ->money('IDR')
+                                    ->size('lg')
+                                    ->weight('bold')
+                                    ->color('success'),
 
                                 TextEntry::make('tunjangan')
                                     ->label('Tunjangan')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-gift')
+                                    ->money('IDR')
+                                    ->color('info'),
 
                                 TextEntry::make('bonus')
                                     ->label('Bonus')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-star')
+                                    ->money('IDR')
+                                    ->color('warning'),
 
                                 TextEntry::make('lembur')
                                     ->label('Lembur')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-clock')
+                                    ->money('IDR')
+                                    ->color('purple'),
 
                                 TextEntry::make('insentif')
                                     ->label('Insentif')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-trophy')
+                                    ->money('IDR')
+                                    ->color('amber'),
                             ])
-                    ]),
+                    ])
+                    ->collapsible(),
 
-                Section::make('Potongan')
+                Section::make('📉 Potongan')
+                    ->description('Rincian potongan gaji')
+                    ->icon('heroicon-o-minus-circle')
+                    ->iconColor('danger')
                     ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextEntry::make('potongan_terlambat')
                                     ->label('Potongan Terlambat')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-clock')
+                                    ->money('IDR')
+                                    ->color('danger'),
 
                                 TextEntry::make('potongan_absensi')
                                     ->label('Potongan Absensi')
-                                    ->money('IDR'),
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->money('IDR')
+                                    ->color('danger'),
 
                                 TextEntry::make('potongan_lainnya')
                                     ->label('Potongan Lainnya')
-                                    ->money('IDR'),
-                            ])
-                    ]),
-
-                Section::make('Ringkasan')
-                    ->schema([
-                        Grid::make(3)
-                            ->schema([
-                                TextEntry::make('total_gaji')
-                                    ->label('Total Gaji')
+                                    ->icon('heroicon-o-exclamation-triangle')
                                     ->money('IDR')
-                                    ->weight('bold')
-                                    ->color('success'),
-
-                                TextEntry::make('total_potongan')
-                                    ->label('Total Potongan')
-                                    ->money('IDR')
-                                    ->weight('bold')
                                     ->color('danger'),
+                            ])
+                    ])
+                    ->collapsible(),
 
-                                TextEntry::make('gaji_bersih')
-                                    ->label('Gaji Bersih')
-                                    ->money('IDR')
-                                    ->weight('bold')
-                                    ->size('lg')
-                                    ->color('primary'),
+                Section::make('📊 Ringkasan Gaji')
+                    ->description('Total keseluruhan penggajian')
+                    ->icon('heroicon-o-calculator')
+                    ->iconColor('primary')
+                    ->schema([
+                        Grid::make(1)
+                            ->schema([
+                                // Card-like layout for summary
+                                Grid::make(3)
+                                    ->schema([
+                                        TextEntry::make('total_gaji')
+                                            ->label('Total Penghasilan')
+                                            ->icon('heroicon-o-arrow-trending-up')
+                                            ->money('IDR')
+                                            ->weight('bold')
+                                            ->size('lg')
+                                            ->color('success'),
+
+                                        TextEntry::make('total_potongan')
+                                            ->label('Total Potongan')
+                                            ->icon('heroicon-o-arrow-trending-down')
+                                            ->money('IDR')
+                                            ->weight('bold')
+                                            ->size('lg')
+                                            ->color('danger'),
+
+                                        TextEntry::make('gaji_bersih')
+                                            ->label('Gaji Bersih')
+                                            ->icon('heroicon-o-check-badge')
+                                            ->money('IDR')
+                                            ->weight('bold')
+                                            ->size('xl')
+                                            ->color('primary'),
+                                    ])
                             ])
                     ]),
 
-                Section::make('Catatan')
+                Section::make('📝 Catatan')
+                    ->description('Catatan tambahan untuk penggajian ini')
+                    ->icon('heroicon-o-document-text')
+                    ->iconColor('gray')
                     ->schema([
                         TextEntry::make('catatan')
                             ->label('Catatan')
+                            ->icon('heroicon-o-chat-bubble-left-ellipsis')
                             ->placeholder('Tidak ada catatan')
-                            ->columnSpanFull(),
+                            ->columnSpanFull()
+                            ->color('gray'),
                     ])
-                    ->visible(fn() => !empty($this->record->catatan)),
+                    ->visible(fn() => !empty($this->record->catatan))
+                    ->collapsible(),
 
-                Section::make('Informasi Sistem')
+                Section::make('⚙️ Informasi Sistem')
+                    ->description('Data sistem dan audit trail')
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->iconColor('gray')
                     ->schema([
                         Grid::make(2)
                             ->schema([
                                 TextEntry::make('created_at')
                                     ->label('Dibuat Pada')
-                                    ->dateTime('d F Y H:i'),
+                                    ->icon('heroicon-o-plus-circle')
+                                    ->dateTime('d F Y H:i')
+                                    ->color('info'),
 
                                 TextEntry::make('updated_at')
                                     ->label('Diperbarui Pada')
-                                    ->dateTime('d F Y H:i'),
+                                    ->icon('heroicon-o-pencil-square')
+                                    ->dateTime('d F Y H:i')
+                                    ->color('warning'),
                             ])
                     ])
                     ->collapsible()

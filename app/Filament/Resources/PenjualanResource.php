@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\FontWeight;
 use Filament\Forms\Components\Actions\Action;
 use App\Filament\Resources\PenjualanResource\RelationManagers\PembayaransRelationManager;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
 class PenjualanResource extends Resource
 {
@@ -450,39 +451,72 @@ class PenjualanResource extends Resource
     {
         return $infolist
             ->schema([
-                Components\Section::make('Informasi Faktur')
+                // Header Section - Informasi Faktur
+                Components\Section::make('📄 Informasi Faktur')
+                    ->description('Detail faktur dan tanggal penjualan')
                     ->schema([
                         Components\Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('no_faktur')
                                     ->label('No. Faktur')
-                                    ->weight(FontWeight::Bold),
+                                    ->weight(FontWeight::Bold)
+                                    ->size(TextEntrySize::Large)
+                                    ->icon('heroicon-o-document-text')
+                                    ->copyable()
+                                    ->copyMessage('No. Faktur berhasil disalin!')
+                                    ->badge()
+                                    ->color('primary'),
 
                                 Components\TextEntry::make('tanggal_penjualan')
                                     ->label('Tanggal Penjualan')
-                                    ->date('d F Y'),
+                                    ->date('d F Y')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->badge()
+                                    ->color('info')
+                                    ->weight(FontWeight::SemiBold),
                             ]),
-                    ]),
+                    ])
+                    ->compact(),
 
-                Components\Section::make('Data Transaksi')
+                // Data Transaksi dengan Icons
+                Components\Section::make('🚗 Data Transaksi')
+                    ->description('Informasi mobil, pelanggan, dan sales')
                     ->schema([
                         Components\Grid::make(2)
                             ->schema([
-                                // FIXED: Menggunakan accessor yang benar
                                 Components\TextEntry::make('stokMobil.nama_lengkap_penjualan')
-                                    ->label('Mobil'),
+                                    ->label('Mobil yang Dijual')
+                                    ->icon('heroicon-o-truck')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('success')
+                                    ->size(TextEntrySize::Medium),
 
                                 Components\TextEntry::make('pelanggan.nama_lengkap')
-                                    ->label('Pelanggan'),
+                                    ->label('Pelanggan')
+                                    ->icon('heroicon-o-user')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('info'),
 
                                 Components\TextEntry::make('karyawan.nama_lengkap')
-                                    ->label('Sales')
-                                    ->placeholder('-'),
+                                    ->label('Sales Executive')
+                                    ->icon('heroicon-o-user-circle')
+                                    ->placeholder('Tidak ada sales')
+                                    ->color('gray'),
 
                                 Components\TextEntry::make('status')
-                                    ->label('Status')
+                                    ->label('Status Penjualan')
                                     ->badge()
+                                    ->size(TextEntrySize::Large)
+                                    ->weight(FontWeight::Bold)
                                     ->formatStateUsing(fn($state) => Penjualan::STATUS[$state] ?? $state)
+                                    ->icon(fn($state) => match ($state) {
+                                        'draft' => 'heroicon-o-document',
+                                        'booking' => 'heroicon-o-clock',
+                                        'lunas' => 'heroicon-o-check-circle',
+                                        'kredit' => 'heroicon-o-credit-card',
+                                        'batal' => 'heroicon-o-x-circle',
+                                        default => 'heroicon-o-question-mark-circle'
+                                    })
                                     ->color(fn($state) => match ($state) {
                                         'draft' => 'gray',
                                         'booking' => 'warning',
@@ -492,117 +526,297 @@ class PenjualanResource extends Resource
                                         default => 'gray'
                                     }),
                             ]),
-                    ]),
+                    ])
+                    ->collapsible()
+                    ->compact(),
 
-                Components\Section::make('Detail Harga')
+                // Detail Harga dengan Visual Enhancement
+                Components\Section::make('💰 Detail Harga')
+                    ->description('Rincian harga dan perhitungan total')
                     ->schema([
-                        Components\Grid::make(2)
+                        Components\Fieldset::make('Komponen Harga')
                             ->schema([
-                                Components\TextEntry::make('harga_jual')
-                                    ->label('Harga Jual')
-                                    ->money('IDR'),
+                                Components\Grid::make(3)
+                                    ->schema([
+                                        Components\TextEntry::make('harga_jual')
+                                            ->label('Harga Jual')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-banknotes')
+                                            ->weight(FontWeight::SemiBold)
+                                            ->color('success'),
 
-                                Components\TextEntry::make('diskon')
-                                    ->label('Diskon')
-                                    ->money('IDR'),
+                                        Components\TextEntry::make('diskon')
+                                            ->label('Diskon')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-receipt-percent')
+                                            ->color('warning'),
 
-                                Components\TextEntry::make('ppn')
-                                    ->label('PPN')
-                                    ->money('IDR'),
-
-                                Components\TextEntry::make('biaya_tambahan')
-                                    ->label('Biaya Tambahan')
-                                    ->money('IDR'),
-
-                                Components\TextEntry::make('total')
-                                    ->label('Total')
-                                    ->money('IDR')
-                                    ->weight(FontWeight::Bold)
-                                    ->color('primary'),
+                                        Components\TextEntry::make('ppn')
+                                            ->label('PPN (11%)')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-calculator')
+                                            ->color('info'),
+                                    ]),
                             ]),
-                    ]),
 
-                Components\Section::make('Metode Pembayaran')
+                        Components\Fieldset::make('Total Pembayaran')
+                            ->schema([
+                                Components\Grid::make(2)
+                                    ->schema([
+                                        Components\TextEntry::make('biaya_tambahan')
+                                            ->label('Biaya Tambahan')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-plus-circle')
+                                            ->color('gray'),
+
+                                        Components\TextEntry::make('total')
+                                            ->label('TOTAL PEMBAYARAN')
+                                            ->money('IDR')
+                                            ->weight(FontWeight::Bold)
+                                            ->size(TextEntrySize::Large)
+                                            ->color('primary')
+                                            ->icon('heroicon-o-currency-dollar')
+                                            ->badge(),
+                                    ]),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->compact(),
+
+                // Metode Pembayaran dengan Conditional Display
+                Components\Section::make('💳 Metode Pembayaran')
+                    ->description('Detail pembayaran dan financing')
                     ->schema([
                         Components\Grid::make(2)
                             ->schema([
                                 Components\TextEntry::make('metode_pembayaran')
                                     ->label('Metode Pembayaran')
                                     ->badge()
-                                    ->formatStateUsing(fn($state) => Penjualan::METODE_PEMBAYARAN[$state] ?? $state),
+                                    ->size(TextEntrySize::Medium)
+                                    ->weight(FontWeight::SemiBold)
+                                    ->formatStateUsing(fn($state) => Penjualan::METODE_PEMBAYARAN[$state] ?? $state)
+                                    ->icon(fn($state) => match ($state) {
+                                        'tunai' => 'heroicon-o-banknotes',
+                                        'kredit' => 'heroicon-o-credit-card',
+                                        'trade_in' => 'heroicon-o-arrow-path-rounded-square',
+                                        default => 'heroicon-o-currency-dollar'
+                                    })
+                                    ->color(fn($state) => match ($state) {
+                                        'tunai' => 'success',
+                                        'kredit' => 'info',
+                                        'trade_in' => 'warning',
+                                        default => 'gray'
+                                    }),
 
                                 Components\TextEntry::make('leasing_bank')
                                     ->label('Bank Leasing')
-                                    ->formatStateUsing(fn($state) => $state ? (Penjualan::LEASING_BANKS[$state] ?? $state) : '-')
-                                    ->placeholder('-'),
-
-                                Components\TextEntry::make('tenor_bulan')
-                                    ->label('Tenor')
-                                    ->suffix(' bulan')
-                                    ->placeholder('-'),
-
-                                Components\TextEntry::make('uang_muka')
-                                    ->label('Uang Muka')
-                                    ->money('IDR')
-                                    ->placeholder('-'),
-
-                                Components\TextEntry::make('cicilan_bulanan')
-                                    ->label('Cicilan Bulanan')
-                                    ->money('IDR')
-                                    ->placeholder('-'),
+                                    ->formatStateUsing(fn($state) => $state ? (Penjualan::LEASING_BANKS[$state] ?? $state) : 'Tidak menggunakan leasing')
+                                    ->icon('heroicon-o-building-library')
+                                    ->badge()
+                                    ->color('info')
+                                    ->visible(fn($record) => $record->metode_pembayaran === 'kredit'),
                             ]),
-                    ]),
 
-                Components\Section::make('Trade In')
-                    ->schema([
-                        Components\RepeatableEntry::make('trade_in')
-                            ->label('Data Trade In')
+                        // Kredit Details
+                        Components\Fieldset::make('Detail Kredit')
                             ->schema([
                                 Components\Grid::make(3)
                                     ->schema([
-                                        Components\TextEntry::make('merk')
-                                            ->label('Merk'),
-                                        Components\TextEntry::make('model')
-                                            ->label('Model'),
-                                        Components\TextEntry::make('tahun')
-                                            ->label('Tahun'),
+                                        Components\TextEntry::make('tenor_bulan')
+                                            ->label('Tenor Kredit')
+                                            ->suffix(' bulan')
+                                            ->icon('heroicon-o-clock')
+                                            ->badge()
+                                            ->color('warning'),
+
+                                        Components\TextEntry::make('uang_muka')
+                                            ->label('Uang Muka (DP)')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-banknotes')
+                                            ->color('success'),
+
+                                        Components\TextEntry::make('cicilan_bulanan')
+                                            ->label('Cicilan per Bulan')
+                                            ->money('IDR')
+                                            ->icon('heroicon-o-arrow-trending-up')
+                                            ->weight(FontWeight::SemiBold)
+                                            ->color('primary'),
                                     ]),
+                            ])
+                            ->visible(fn($record) => $record->metode_pembayaran === 'kredit'),
+                    ])
+                    ->collapsible()
+                    ->compact(),
+
+                // Trade In Section dengan Enhanced Display
+                Components\Section::make('🔄 Trade In')
+                    ->description('Data kendaraan trade in')
+                    ->schema([
+                        Components\RepeatableEntry::make('trade_in')
+                            ->label('Kendaraan Trade In')
+                            ->schema([
+                                Components\Fieldset::make('Informasi Kendaraan')
+                                    ->schema([
+                                        Components\Grid::make(3)
+                                            ->schema([
+                                                Components\TextEntry::make('merk')
+                                                    ->label('Merk')
+                                                    ->icon('heroicon-o-tag')
+                                                    ->badge()
+                                                    ->color('info'),
+                                                Components\TextEntry::make('model')
+                                                    ->label('Model')
+                                                    ->icon('heroicon-o-truck')
+                                                    ->weight(FontWeight::SemiBold),
+                                                Components\TextEntry::make('tahun')
+                                                    ->label('Tahun')
+                                                    ->icon('heroicon-o-calendar')
+                                                    ->badge()
+                                                    ->color('warning'),
+                                            ]),
+                                    ]),
+
+                                Components\Fieldset::make('Detail Teknis')
+                                    ->schema([
+                                        Components\Grid::make(2)
+                                            ->schema([
+                                                Components\TextEntry::make('no_rangka')
+                                                    ->label('No. Rangka')
+                                                    ->placeholder('Tidak tersedia')
+                                                    ->icon('heroicon-o-identification')
+                                                    ->copyable()
+                                                    ->copyMessage('No. Rangka disalin!'),
+                                                Components\TextEntry::make('kondisi')
+                                                    ->label('Kondisi Kendaraan')
+                                                    ->icon('heroicon-o-wrench-screwdriver')
+                                                    ->badge()
+                                                    ->color(fn($state) => match (strtolower($state)) {
+                                                        'baik', 'sangat baik' => 'success',
+                                                        'cukup', 'sedang' => 'warning',
+                                                        'kurang', 'buruk' => 'danger',
+                                                        default => 'gray'
+                                                    }),
+                                            ]),
+                                    ]),
+
+                                Components\Fieldset::make('Nilai dan Catatan')
+                                    ->schema([
+                                        Components\Grid::make(2)
+                                            ->schema([
+                                                Components\TextEntry::make('nilai_trade_in')
+                                                    ->label('Nilai Trade In')
+                                                    ->money('IDR')
+                                                    ->icon('heroicon-o-currency-dollar')
+                                                    ->weight(FontWeight::Bold)
+                                                    ->color('success')
+                                                    ->size(TextEntrySize::Medium),
+
+                                                Components\TextEntry::make('catatan_trade_in')
+                                                    ->label('Catatan Trade In')
+                                                    ->placeholder('Tidak ada catatan')
+                                                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                                                    ->color('gray'),
+                                            ]),
+                                    ]),
+                            ])
+                            ->contained()
+                        ,
+                    ])
+                    ->visible(fn(Penjualan $record) => !empty($record->trade_in))
+                    ->collapsible()
+                    ->collapsed(),
+
+                // Informasi Tambahan
+                Components\Section::make('📝 Informasi Tambahan')
+                    ->description('Catatan dan riwayat perubahan')
+                    ->schema([
+                        Components\Fieldset::make('Catatan')
+                            ->schema([
+                                Components\TextEntry::make('catatan')
+                                    ->label('Catatan Penjualan')
+                                    ->placeholder('Tidak ada catatan')
+                                    ->html()
+                                    ->icon('heroicon-o-document-text')
+                                    ->color('gray'),
+                            ]),
+
+                        Components\Fieldset::make('Audit Trail')
+                            ->schema([
                                 Components\Grid::make(2)
                                     ->schema([
-                                        Components\TextEntry::make('no_rangka')
-                                            ->label('No. Rangka')
-                                            ->placeholder('-'),
-                                        Components\TextEntry::make('kondisi')
-                                            ->label('Kondisi'),
+                                        Components\TextEntry::make('created_at')
+                                            ->label('Dibuat Pada')
+                                            ->dateTime('d F Y H:i')
+                                            ->icon('heroicon-o-plus-circle')
+                                            ->color('success')
+                                            ->since(),
+
+                                        Components\TextEntry::make('updated_at')
+                                            ->label('Terakhir Diperbarui')
+                                            ->dateTime('d F Y H:i')
+                                            ->icon('heroicon-o-arrow-path')
+                                            ->color('warning')
+                                            ->since(),
                                     ]),
-                                Components\TextEntry::make('nilai_trade_in')
-                                    ->label('Nilai Trade In')
-                                    ->money('IDR'),
-                                Components\TextEntry::make('catatan_trade_in')
-                                    ->label('Catatan')
-                                    ->placeholder('-'),
-                            ])
-                            ->contained(false),
+                            ]),
                     ])
-                    ->visible(fn(Penjualan $record) => !empty($record->trade_in)),
+                    ->collapsible()
+                    ->collapsed(),
 
-                Components\Section::make('Informasi Tambahan')
+                // Summary Card (Bonus)
+                Components\Section::make('📊 Ringkasan Transaksi')
+                    ->description('Rangkuman penting dari transaksi ini')
                     ->schema([
-                        Components\TextEntry::make('catatan')
-                            ->label('Catatan')
-                            ->placeholder('-')
-                            ->html(),
+                        Components\Grid::make(4)
+                            ->schema([
+                                Components\TextEntry::make('summary_profit')
+                                    ->label('Estimasi Profit')
+                                    ->state(function ($record) {
+                                        // Hitung profit sederhana (harga jual - trade in)
+                                        $tradeInValue = collect($record->trade_in)->sum('nilai_trade_in') ?? 0;
+                                        $estimatedProfit = $record->harga_jual - $tradeInValue;
+                                        return 'Rp ' . number_format($estimatedProfit, 0, ',', '.');
+                                    })
+                                    ->icon('heroicon-o-chart-bar-square')
+                                    ->badge()
+                                    ->color('success'),
 
-                        Components\TextEntry::make('created_at')
-                            ->label('Dibuat')
-                            ->dateTime('d F Y H:i'),
+                                Components\TextEntry::make('summary_commission')
+                                    ->label('Komisi Sales')
+                                    ->state(function ($record) {
+                                        // Asumsi komisi 2% dari harga jual
+                                        $commission = $record->harga_jual * 0.02;
+                                        return 'Rp ' . number_format($commission, 0, ',', '.');
+                                    })
+                                    ->icon('heroicon-o-gift')
+                                    ->badge()
+                                    ->color('info'),
 
-                        Components\TextEntry::make('updated_at')
-                            ->label('Diperbarui')
-                            ->dateTime('d F Y H:i'),
+                                Components\TextEntry::make('summary_payment_due')
+                                    ->label('Sisa Pembayaran')
+                                    ->state(function ($record) {
+                                        if ($record->metode_pembayaran === 'kredit') {
+                                            $remaining = $record->total - ($record->uang_muka ?? 0);
+                                            return 'Rp ' . number_format($remaining, 0, ',', '.');
+                                        }
+                                        return $record->status === 'lunas' ? 'Lunas' : 'Perlu Konfirmasi';
+                                    })
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->badge()
+                                    ->color(fn($record) => $record->status === 'lunas' ? 'success' : 'warning'),
+
+                                Components\TextEntry::make('summary_days_since')
+                                    ->label('Hari Sejak Dibuat')
+                                    ->state(fn($record) => $record->created_at->diffInDays(now()) . ' hari')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->badge()
+                                    ->color('gray'),
+                            ]),
                     ])
-                    ->collapsible(),
-            ]);
+                    ->collapsible()
+                    ->collapsed(),
+            ])
+            ->columns(1);
     }
 
     public static function getRelations(): array

@@ -318,64 +318,373 @@ class PengajuanCutiResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Informasi Karyawan')
+                // Header Section - Ringkasan Cuti
+                Infolists\Components\Section::make('Ringkasan Pengajuan Cuti')
                     ->schema([
-                        Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
-                            ->label('Nama Lengkap'),
-                        Infolists\Components\TextEntry::make('karyawan.nip')
-                            ->label('NIP'),
-                        Infolists\Components\TextEntry::make('karyawan.departemen')
-                            ->label('Departemen'),
-                        Infolists\Components\TextEntry::make('karyawan.jabatan')
-                            ->label('Jabatan'),
-                    ])
-                    ->columns(2),
+                        Infolists\Components\Grid::make(12)
+                            ->schema([
+                                // Status utama
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('status')
+                                        ->label('Status Pengajuan')
+                                        ->formatStateUsing(fn(string $state): string => PengajuanCuti::getStatusOptions()[$state] ?? $state)
+                                        ->badge()
+                                        ->size('xl')
+                                        ->color(fn(PengajuanCuti $record): string => $record->status_color),
 
-                Infolists\Components\Section::make('Detail Cuti')
+                                    Infolists\Components\TextEntry::make('jenis')
+                                        ->label('Jenis Cuti')
+                                        ->formatStateUsing(fn(string $state): string => PengajuanCuti::getJenisOptions()[$state] ?? $state)
+                                        ->badge()
+                                        ->size('lg')
+                                        ->color('info'),
+                                ])
+                                    ->columnSpan(4),
+
+                                // Periode cuti
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('tanggal_mulai')
+                                        ->label('Tanggal Mulai')
+                                        ->date('d F Y')
+                                        ->icon('heroicon-o-calendar')
+                                        ->iconColor('success')
+                                        ->weight('semibold'),
+
+                                    Infolists\Components\TextEntry::make('tanggal_selesai')
+                                        ->label('Tanggal Selesai')
+                                        ->date('d F Y')
+                                        ->icon('heroicon-o-calendar')
+                                        ->iconColor('danger')
+                                        ->weight('semibold'),
+
+                                    Infolists\Components\TextEntry::make('jumlah_hari')
+                                        ->label('Total Hari')
+                                        ->suffix(' hari')
+                                        ->icon('heroicon-o-clock')
+                                        ->iconColor('warning')
+                                        ->size('lg')
+                                        ->weight('bold')
+                                        ->color('primary'),
+                                ])
+                                    ->columnSpan(4),
+
+                                // Info tambahan
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('created_at')
+                                        ->label('Tanggal Pengajuan')
+                                        ->date('d F Y')
+                                        ->icon('heroicon-o-document-plus')
+                                        ->iconColor('info'),
+
+                                    Infolists\Components\TextEntry::make('sisa_cuti')
+                                        ->label('Sisa Cuti Tahunan')
+                                        ->suffix(' hari')
+                                        ->icon('heroicon-o-chart-bar')
+                                        ->iconColor('primary')
+                                        ->visible(fn(PengajuanCuti $record): bool => isset($record->sisa_cuti)),
+
+                                    Infolists\Components\TextEntry::make('cuti_terpakai')
+                                        ->label('Cuti Terpakai')
+                                        ->suffix(' hari')
+                                        ->icon('heroicon-o-minus-circle')
+                                        ->iconColor('gray')
+                                        ->visible(fn(PengajuanCuti $record): bool => isset($record->cuti_terpakai)),
+                                ])
+                                    ->columnSpan(4),
+                            ]),
+                    ])
+                    ->icon('heroicon-o-calendar-days')
+                    ->iconColor('primary'),
+
+                // Informasi Karyawan
+                Infolists\Components\Section::make('Informasi Pemohon')
                     ->schema([
-                        Infolists\Components\TextEntry::make('jenis')
-                            ->label('Jenis Cuti')
-                            ->formatStateUsing(fn(string $state): string => PengajuanCuti::getJenisOptions()[$state] ?? $state)
-                            ->badge(),
-                        Infolists\Components\TextEntry::make('tanggal_mulai')
-                            ->label('Tanggal Mulai')
-                            ->date('d F Y'),
-                        Infolists\Components\TextEntry::make('tanggal_selesai')
-                            ->label('Tanggal Selesai')
-                            ->date('d F Y'),
-                        Infolists\Components\TextEntry::make('jumlah_hari')
-                            ->label('Jumlah Hari')
-                            ->suffix(' hari'),
-                        Infolists\Components\TextEntry::make('alasan')
-                            ->label('Alasan Cuti')
-                            ->columnSpanFull(),
-                        Infolists\Components\ImageEntry::make('dokumen')
-                            ->label('Dokumen Pendukung')
+                        Infolists\Components\Grid::make(12)
+                            ->schema([
+                                // Foto karyawan jika ada
+                                Infolists\Components\ImageEntry::make('karyawan.foto')
+                                    ->label('Foto')
+                                    ->circular()
+                                    ->height(120)
+                                    ->width(120)
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->karyawan?->foto))
+                                    ->columnSpan(2),
+
+                                // Data pribadi
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
+                                        ->label('Nama Lengkap')
+                                        ->icon('heroicon-o-user')
+                                        ->iconColor('primary')
+                                        ->weight('bold')
+                                        ->size('lg'),
+
+                                    Infolists\Components\TextEntry::make('karyawan.nip')
+                                        ->label('NIP')
+                                        ->icon('heroicon-o-identification')
+                                        ->iconColor('info')
+                                        ->copyable(),
+
+                                    Infolists\Components\TextEntry::make('karyawan.email')
+                                        ->label('Email')
+                                        ->icon('heroicon-o-envelope')
+                                        ->iconColor('warning')
+                                        ->copyable()
+                                        ->visible(fn(PengajuanCuti $record): bool => !empty($record->karyawan?->email)),
+                                ])
+                                    ->columnSpan(5),
+
+                                // Data organisasi
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('karyawan.departemen')
+                                        ->label('Departemen')
+                                        ->icon('heroicon-o-building-office-2')
+                                        ->iconColor('success')
+                                        ->badge()
+                                        ->color('success'),
+
+                                    Infolists\Components\TextEntry::make('karyawan.jabatan')
+                                        ->label('Jabatan')
+                                        ->icon('heroicon-o-briefcase')
+                                        ->iconColor('primary')
+                                        ->badge()
+                                        ->color('primary'),
+
+                                    Infolists\Components\TextEntry::make('karyawan.atasan.nama_lengkap')
+                                        ->label('Atasan Langsung')
+                                        ->icon('heroicon-o-user-group')
+                                        ->iconColor('info')
+                                        ->visible(fn(PengajuanCuti $record): bool => !empty($record->karyawan?->atasan)),
+                                ])
+                                    ->columnSpan(5),
+                            ]),
+                    ])
+                    ->icon('heroicon-o-user-circle')
+                    ->iconColor('info'),
+
+                // Detail Pengajuan Cuti
+                Infolists\Components\Section::make('Detail Pengajuan')
+                    ->schema([
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                // Alasan dan keterangan
+                                Infolists\Components\TextEntry::make('alasan')
+                                    ->label('Alasan Cuti')
+                                    ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                                    ->iconColor('primary')
+                                    ->columnSpanFull()
+                                    ->placeholder('Tidak ada alasan yang diberikan'),
+
+                                Infolists\Components\TextEntry::make('alamat_selama_cuti')
+                                    ->label('Alamat Selama Cuti')
+                                    ->icon('heroicon-o-map-pin')
+                                    ->iconColor('warning')
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->alamat_selama_cuti))
+                                    ->columnSpanFull(),
+
+                                Infolists\Components\TextEntry::make('telepon_darurat')
+                                    ->label('Telepon Darurat')
+                                    ->icon('heroicon-o-phone')
+                                    ->iconColor('danger')
+                                    ->copyable()
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->telepon_darurat)),
+
+                                Infolists\Components\TextEntry::make('pengganti_tugas')
+                                    ->label('Pengganti Tugas')
+                                    ->icon('heroicon-o-user-plus')
+                                    ->iconColor('success')
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->pengganti_tugas)),
+                            ]),
+
+                        // Dokumen pendukung
+                        Infolists\Components\Group::make([
+                            Infolists\Components\ImageEntry::make('dokumen')
+                                ->label('Dokumen Pendukung')
+                                ->disk('public')
+                                ->height(200)
+                                ->width(300)
+                                ->extraAttributes(['class' => 'rounded-lg shadow-md'])
+                                ->visible(fn(PengajuanCuti $record): bool => !empty($record->dokumen)),
+                        ])
                             ->columnSpanFull()
-                            ->visible(fn($record) => $record->dokumen),
+                            ->visible(fn(PengajuanCuti $record): bool => !empty($record->dokumen)),
                     ])
-                    ->columns(2),
+                    ->icon('heroicon-o-document-text')
+                    ->iconColor('warning'),
 
-                Infolists\Components\Section::make('Status Persetujuan')
+                // Status Persetujuan dengan Timeline
+                Infolists\Components\Section::make('Status & Persetujuan')
                     ->schema([
-                        Infolists\Components\TextEntry::make('status')
-                            ->label('Status')
-                            ->formatStateUsing(fn(string $state): string => PengajuanCuti::getStatusOptions()[$state] ?? $state)
-                            ->badge()
-                            ->color(fn(PengajuanCuti $record): string => $record->status_color),
-                        Infolists\Components\TextEntry::make('disetujuiOleh.name')
-                            ->label('Disetujui Oleh')
-                            ->visible(fn($record) => $record->disetujui_oleh),
-                        Infolists\Components\TextEntry::make('tanggal_persetujuan')
-                            ->label('Tanggal Persetujuan')
-                            ->dateTime('d F Y H:i')
-                            ->visible(fn($record) => $record->tanggal_persetujuan),
-                        Infolists\Components\TextEntry::make('alasan_penolakan')
-                            ->label('Alasan Penolakan')
-                            ->visible(fn($record) => $record->status === PengajuanCuti::STATUS_DITOLAK)
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                // Status current
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('status')
+                                        ->label('Status Saat Ini')
+                                        ->formatStateUsing(fn(string $state): string => PengajuanCuti::getStatusOptions()[$state] ?? $state)
+                                        ->badge()
+                                        ->size('xl')
+                                        ->color(fn(PengajuanCuti $record): string => $record->status_color),
+
+                                    Infolists\Components\TextEntry::make('progress_percentage')
+                                        ->label('Progress')
+                                        ->formatStateUsing(
+                                            fn(PengajuanCuti $record): string =>
+                                            match ($record->status) {
+                                                PengajuanCuti::STATUS_MENUNGGU => '0%',
+                                                PengajuanCuti::STATUS_DISETUJUI => '100%',
+                                                PengajuanCuti::STATUS_DITOLAK => '0%',
+                                                default => '0%'
+                                            }
+                                        )
+                                        ->suffix(' selesai')
+                                        ->icon('heroicon-o-chart-pie'),
+                                ])
+                                    ->columnSpan(1),
+
+                                // Info persetujuan
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('disetujuiOleh.name')
+                                        ->label('Disetujui/Ditolak Oleh')
+                                        ->icon('heroicon-o-user')
+                                        ->iconColor('success')
+                                        ->visible(fn(PengajuanCuti $record): bool => !empty($record->disetujui_oleh)),
+
+                                    Infolists\Components\TextEntry::make('tanggal_persetujuan')
+                                        ->label('Tanggal Keputusan')
+                                        ->dateTime('d F Y, H:i')
+                                        ->icon('heroicon-o-calendar-days')
+                                        ->iconColor('primary')
+                                        ->visible(fn(PengajuanCuti $record): bool => !empty($record->tanggal_persetujuan)),
+
+                                    Infolists\Components\TextEntry::make('level_persetujuan')
+                                        ->label('Level Persetujuan')
+                                        ->badge()
+                                        ->color('info')
+                                        ->visible(fn(PengajuanCuti $record): bool => !empty($record->level_persetujuan)),
+                                ])
+                                    ->columnSpan(1),
+
+                                // Catatan atau alasan penolakan
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('catatan_persetujuan')
+                                        ->label('Catatan Persetujuan')
+                                        ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                                        ->iconColor('info')
+                                        ->visible(
+                                            fn(PengajuanCuti $record): bool =>
+                                            !empty($record->catatan_persetujuan) &&
+                                            $record->status === PengajuanCuti::STATUS_DISETUJUI
+                                        ),
+
+                                    Infolists\Components\TextEntry::make('alasan_penolakan')
+                                        ->label('Alasan Penolakan')
+                                        ->icon('heroicon-o-x-circle')
+                                        ->iconColor('danger')
+                                        ->color('danger')
+                                        ->visible(
+                                            fn(PengajuanCuti $record): bool =>
+                                            $record->status === PengajuanCuti::STATUS_DITOLAK &&
+                                            !empty($record->alasan_penolakan)
+                                        ),
+                                ])
+                                    ->columnSpan(1),
+                            ]),
+
+                        // Timeline persetujuan
+                        Infolists\Components\TextEntry::make('timeline_persetujuan')
+                            ->label('Timeline Persetujuan')
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->visible(fn(PengajuanCuti $record): bool => !empty($record->timeline_persetujuan))
                             ->columnSpanFull(),
                     ])
-                    ->columns(2),
+                    ->icon('heroicon-o-check-circle')
+                    ->iconColor('success'),
+
+                // Dampak Cuti & Informasi Tambahan
+                Infolists\Components\Section::make('Dampak & Informasi Tambahan')
+                    ->schema([
+                        Infolists\Components\Grid::make(4)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('hari_kerja_hilang')
+                                    ->label('Hari Kerja Hilang')
+                                    ->suffix(' hari')
+                                    ->icon('heroicon-o-calendar-x')
+                                    ->iconColor('danger')
+                                    ->visible(fn(PengajuanCuti $record): bool => isset($record->hari_kerja_hilang)),
+
+                                Infolists\Components\TextEntry::make('biaya_pengganti')
+                                    ->label('Biaya Pengganti')
+                                    ->formatStateUsing(fn(?string $state): string => $state ? 'Rp ' . number_format($state, 0, ',', '.') : 'Tidak ada')
+                                    ->icon('heroicon-o-banknotes')
+                                    ->iconColor('warning')
+                                    ->visible(fn(PengajuanCuti $record): bool => isset($record->biaya_pengganti)),
+
+                                Infolists\Components\TextEntry::make('proyek_terdampak')
+                                    ->label('Proyek Terdampak')
+                                    ->badge()
+                                    ->color('warning')
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->proyek_terdampak)),
+
+                                Infolists\Components\TextEntry::make('tingkat_urgensi')
+                                    ->label('Tingkat Urgensi')
+                                    ->badge()
+                                    ->color(
+                                        fn(?string $state): string =>
+                                        match ($state) {
+                                            'tinggi' => 'danger',
+                                            'sedang' => 'warning',
+                                            'rendah' => 'success',
+                                            default => 'gray'
+                                        }
+                                    )
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->tingkat_urgensi)),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->persistCollapsed()
+                    ->visible(
+                        fn(PengajuanCuti $record): bool =>
+                        isset($record->hari_kerja_hilang) ||
+                        isset($record->biaya_pengganti) ||
+                        !empty($record->proyek_terdampak) ||
+                        !empty($record->tingkat_urgensi)
+                    )
+                    ->icon('heroicon-o-exclamation-triangle')
+                    ->iconColor('warning'),
+
+                // System Information
+                Infolists\Components\Section::make('Informasi Sistem')
+                    ->schema([
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('created_at')
+                                    ->label('Dibuat Pada')
+                                    ->dateTime('d F Y, H:i:s')
+                                    ->icon('heroicon-o-plus-circle')
+                                    ->iconColor('success'),
+
+                                Infolists\Components\TextEntry::make('updated_at')
+                                    ->label('Terakhir Diubah')
+                                    ->dateTime('d F Y, H:i:s')
+                                    ->icon('heroicon-o-pencil-square')
+                                    ->iconColor('warning'),
+
+                                Infolists\Components\TextEntry::make('nomor_referensi')
+                                    ->label('No. Referensi')
+                                    ->copyable()
+                                    ->icon('heroicon-o-hashtag')
+                                    ->visible(fn(PengajuanCuti $record): bool => !empty($record->nomor_referensi)),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->persistCollapsed()
+                    ->icon('heroicon-o-cog-6-tooth')
+                    ->iconColor('gray'),
+
+
             ]);
     }
 

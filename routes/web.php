@@ -4,6 +4,8 @@
 use App\Http\Controllers\Auth\KaryawanAuthController;
 use App\Http\Controllers\Karyawan\AbsensiController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PenjualanController;
+use App\Http\Controllers\PenggajianController;
 
 /*
 |--------------------------------------------------------------------------
@@ -58,6 +60,17 @@ Route::fallback(function () {
     return response()->view('errors.404', [], 404);
 });
 
-Route::get('/penggajian/{penggajian}/print', function (App\Models\Penggajian $penggajian) {
-    return view('penggajian.slip', compact('penggajian'));
-})->name('penggajian.print');
+Route::get('/penggajian/{penggajian}/preview', [PenggajianController::class, 'preview'])->name('penggajian.preview');
+Route::get('/penggajian/{penggajian}/print', [PenggajianController::class, 'print'])->name('penggajian.print');
+Route::get('/penggajian/{penggajian}/download', [PenggajianController::class, 'download'])->name('penggajian.download');
+
+// Route untuk print invoice penjualan
+Route::get('/penjualan/{penjualan}/print', [PenjualanController::class, 'print'])
+    ->name('penjualan.print')
+    ->middleware(['auth']);
+
+
+// Route untuk download PDF invoice
+Route::get('/penjualan/{penjualan}/download', [PenjualanController::class, 'downloadPdf'])
+    ->name('penjualan.download')
+    ->middleware(['auth']);

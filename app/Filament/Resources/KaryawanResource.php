@@ -129,15 +129,59 @@ class KaryawanResource extends Resource
                     ->schema([
                         Grid::make(2)
                             ->schema([
-                                TextInput::make('jabatan')
+                                Select::make('jabatan')
                                     ->label('Jabatan')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->options([
+                                        'sales_executive' => 'Sales Executive',
+                                        'sales_supervisor' => 'Sales Supervisor',
+                                        'sales_manager' => 'Sales Manager',
+                                        'service_advisor' => 'Service Advisor',
+                                        'teknisi' => 'Teknisi',
+                                        'kepala_teknisi' => 'Kepala Teknisi',
+                                        'service_manager' => 'Service Manager',
+                                        'spare_part_staff' => 'Staff Spare Part',
+                                        'spare_part_supervisor' => 'Supervisor Spare Part',
+                                        'finance_staff' => 'Staff Finance',
+                                        'finance_manager' => 'Finance Manager',
+                                        'admin' => 'Admin',
+                                        'receptionist' => 'Receptionist',
+                                        'security' => 'Security',
+                                        'driver' => 'Driver',
+                                        'cleaning_service' => 'Cleaning Service',
+                                        'general_manager' => 'General Manager',
+                                        'deputy_manager' => 'Deputy Manager',
+                                        'marketing_staff' => 'Marketing Staff',
+                                        'marketing_manager' => 'Marketing Manager',
+                                        'body_repair_staff' => 'Staff Body Repair',
+                                        'quality_control' => 'Quality Control',
+                                        'inventory_staff' => 'Staff Inventory',
+                                        'customer_service' => 'Customer Service',
+                                        'cashier' => 'Kasir',
+                                    ])
+                                    ->searchable(),
 
-                                TextInput::make('departemen')
+                                Select::make('departemen')
                                     ->label('Departemen')
                                     ->required()
-                                    ->maxLength(255),
+                                    ->options([
+                                        'sales' => 'Sales',
+                                        'service' => 'Service',
+                                        'spare_part' => 'Spare Part',
+                                        'finance' => 'Finance',
+                                        'admin' => 'Admin',
+                                        'marketing' => 'Marketing',
+                                        'body_repair' => 'Body Repair',
+                                        'general_affairs' => 'General Affairs',
+                                        'security' => 'Security',
+                                        'management' => 'Management',
+                                        'customer_service' => 'Customer Service',
+                                        'inventory' => 'Inventory',
+                                        'quality_assurance' => 'Quality Assurance',
+                                        'it_support' => 'IT Support',
+                                        'human_resources' => 'Human Resources',
+                                    ])
+                                    ->searchable(),
 
                                 TextInput::make('gaji_pokok')
                                     ->label('Gaji Pokok')

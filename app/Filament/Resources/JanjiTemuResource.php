@@ -343,23 +343,54 @@ class JanjiTemuResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Data Pelanggan')
+                // Section Data Pelanggan dengan ikon dan styling yang menarik
+                Infolists\Components\Section::make('👤 Data Pelanggan')
+                    ->description('Informasi lengkap pelanggan yang membuat janji temu')
+                    ->icon('heroicon-o-user-circle')
+                    ->iconColor('primary')
                     ->schema([
                         Infolists\Components\TextEntry::make('nama_pelanggan')
-                            ->label('Nama'),
-                        Infolists\Components\TextEntry::make('email_pelanggan')
-                            ->label('Email'),
-                        Infolists\Components\TextEntry::make('telepon_pelanggan')
-                            ->label('Telepon'),
-                        Infolists\Components\TextEntry::make('alamat_pelanggan')
-                            ->label('Alamat')
-                            ->columnSpanFull(),
-                    ])->columns(2),
+                            ->label('Nama Lengkap')
+                            ->icon('heroicon-o-identification')
+                            ->copyable()
+                            ->weight('bold')
+                            ->color('primary'),
 
-                Infolists\Components\Section::make('Detail Janji Temu')
+                        Infolists\Components\TextEntry::make('email_pelanggan')
+                            ->label('Email')
+                            ->icon('heroicon-o-envelope')
+                            ->copyable()
+                            ->color('gray')
+                            ->url(fn($state) => "mailto:{$state}")
+                            ->openUrlInNewTab(),
+
+                        Infolists\Components\TextEntry::make('telepon_pelanggan')
+                            ->label('Nomor Telepon')
+                            ->icon('heroicon-o-phone')
+                            ->copyable()
+                            ->color('success')
+                            ->url(fn($state) => "tel:{$state}"),
+
+                        Infolists\Components\TextEntry::make('alamat_pelanggan')
+                            ->label('Alamat Lengkap')
+                            ->icon('heroicon-o-map-pin')
+                            ->columnSpanFull()
+                            ->color('gray'),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                // Section Detail Janji Temu dengan styling yang lebih menarik
+                Infolists\Components\Section::make('🚗 Detail Janji Temu')
+                    ->description('Informasi lengkap mengenai janji temu yang dibuat')
+                    ->icon('heroicon-o-calendar-days')
+                    ->iconColor('success')
                     ->schema([
                         Infolists\Components\TextEntry::make('stokMobil')
                             ->label('Mobil yang Diminati')
+                            ->icon('heroicon-o-truck')
+                            ->color('primary')
+                            ->weight('semibold')
                             ->state(function ($record) {
                                 $stok = $record->stokMobil;
                                 if (!$stok)
@@ -372,74 +403,183 @@ class JanjiTemuResource extends Resource
                                 $warna = $stok->warna ? ' - ' . $stok->warna : '';
                                 return "{$merek} - {$namaMobil}{$varianNama}{$warna}";
                             }),
+
                         Infolists\Components\TextEntry::make('jenis')
-                            ->label('Jenis')
+                            ->label('Jenis Janji Temu')
+                            ->icon('heroicon-o-tag')
                             ->badge()
+                            ->color(fn(string $state): string => match ($state) {
+                                'test_drive' => 'warning',
+                                'konsultasi' => 'info',
+                                'negosiasi' => 'success',
+                                'survey_mobil' => 'primary',
+                                'lainnya' => 'gray',
+                                default => 'gray',
+                            })
                             ->formatStateUsing(fn(string $state): string => match ($state) {
-                                'test_drive' => 'Test Drive',
-                                'konsultasi' => 'Konsultasi',
-                                'negosiasi' => 'Negosiasi',
-                                'survey_mobil' => 'Survey Mobil',
-                                'lainnya' => 'Lainnya',
+                                'test_drive' => '🚙 Test Drive',
+                                'konsultasi' => '💬 Konsultasi',
+                                'negosiasi' => '🤝 Negosiasi',
+                                'survey_mobil' => '🔍 Survey Mobil',
+                                'lainnya' => '📋 Lainnya',
                                 default => $state,
                             }),
+
                         Infolists\Components\TextEntry::make('status')
-                            ->label('Status')
+                            ->label('Status Janji Temu')
+                            ->icon('heroicon-o-clock')
                             ->badge()
+                            ->size('lg')
+                            ->weight('bold')
+                            ->color(fn(string $state): string => match ($state) {
+                                'pending' => 'warning',
+                                'dikonfirmasi' => 'info',
+                                'terjadwal' => 'primary',
+                                'selesai' => 'success',
+                                'batal' => 'danger',
+                                'tidak_hadir' => 'gray',
+                                default => 'gray',
+                            })
                             ->formatStateUsing(fn(string $state): string => match ($state) {
-                                'pending' => 'Menunggu Konfirmasi',
-                                'dikonfirmasi' => 'Dikonfirmasi',
-                                'terjadwal' => 'Terjadwal',
-                                'selesai' => 'Selesai',
-                                'batal' => 'Dibatalkan',
-                                'tidak_hadir' => 'Tidak Hadir',
+                                'pending' => '⏳ Menunggu Konfirmasi',
+                                'dikonfirmasi' => '✅ Dikonfirmasi',
+                                'terjadwal' => '📅 Terjadwal',
+                                'selesai' => '🎉 Selesai',
+                                'batal' => '❌ Dibatalkan',
+                                'tidak_hadir' => '🚫 Tidak Hadir',
                                 default => $state,
                             }),
-                        Infolists\Components\TextEntry::make('waktu_mulai')
-                            ->label('Waktu Mulai')
-                            ->dateTime('d F Y, H:i'),
-                        Infolists\Components\TextEntry::make('waktu_selesai')
-                            ->label('Waktu Selesai')
-                            ->dateTime('d F Y, H:i'),
+
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('waktu_mulai')
+                                    ->label('Waktu Mulai')
+                                    ->icon('heroicon-o-play')
+                                    ->color('success')
+                                    ->weight('semibold')
+                                    ->dateTime('d F Y, H:i'),
+
+                                Infolists\Components\TextEntry::make('waktu_selesai')
+                                    ->label('Waktu Selesai')
+                                    ->icon('heroicon-o-stop')
+                                    ->color('danger')
+                                    ->weight('semibold')
+                                    ->dateTime('d F Y, H:i'),
+                            ]),
+
                         Infolists\Components\TextEntry::make('metode')
                             ->label('Metode')
-                            ->badge(),
-                        Infolists\Components\TextEntry::make('lokasi')
-                            ->label('Lokasi'),
-                    ])->columns(2),
+                            ->icon('heroicon-o-cog-6-tooth')
+                            ->badge()
+                            ->color('primary')
+                            ->formatStateUsing(fn(string $state): string => match ($state) {
+                                'online' => '💻 Online',
+                                'offline' => '🏢 Offline',
+                                default => ucfirst($state),
+                            }),
 
-                Infolists\Components\Section::make('Pesan & Catatan')
+                        Infolists\Components\TextEntry::make('lokasi')
+                            ->label('Lokasi')
+                            ->icon('heroicon-o-building-office')
+                            ->color('gray')
+                            ->copyable(),
+                    ])
+                    ->columns(2)
+                    ->collapsible(),
+
+                // Section Pesan & Catatan dengan styling yang menarik
+                Infolists\Components\Section::make('💬 Pesan & Catatan')
+                    ->description('Informasi tambahan dan catatan penting')
+                    ->icon('heroicon-o-chat-bubble-left-right')
+                    ->iconColor('warning')
                     ->schema([
                         Infolists\Components\TextEntry::make('tujuan')
-                            ->label('Tujuan'),
-                        Infolists\Components\TextEntry::make('pesan_tambahan')
-                            ->label('Pesan Tambahan'),
-                        Infolists\Components\TextEntry::make('catatan_internal')
-                            ->label('Catatan Internal'),
-                    ])->columns(1),
+                            ->label('Tujuan Janji Temu')
+                            ->icon('heroicon-o-target')
+                            ->color('primary')
+                            ->placeholder('Tidak ada tujuan yang disebutkan'),
 
-                Infolists\Components\Section::make('Informasi Sistem')
+                        Infolists\Components\TextEntry::make('pesan_tambahan')
+                            ->label('Pesan Tambahan dari Pelanggan')
+                            ->icon('heroicon-o-chat-bubble-bottom-center-text')
+                            ->color('info')
+                            ->placeholder('Tidak ada pesan tambahan')
+                            ->html(),
+
+                        Infolists\Components\TextEntry::make('catatan_internal')
+                            ->label('Catatan Internal')
+                            ->icon('heroicon-o-document-text')
+                            ->color('warning')
+                            ->placeholder('Tidak ada catatan internal')
+                            ->html(),
+                    ])
+                    ->columns(1)
+                    ->collapsible(),
+
+                // Section Informasi Sistem dengan styling yang profesional
+                Infolists\Components\Section::make('⚙️ Informasi Sistem')
+                    ->description('Data sistem dan riwayat proses')
+                    ->icon('heroicon-o-computer-desktop')
+                    ->iconColor('gray')
                     ->schema([
-                        Infolists\Components\TextEntry::make('tanggal_request')
-                            ->label('Tanggal Request')
-                            ->dateTime('d F Y, H:i'),
-                        Infolists\Components\TextEntry::make('tanggal_konfirmasi')
-                            ->label('Tanggal Konfirmasi')
-                            ->dateTime('d F Y, H:i'),
-                        Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
-                            ->label('Sales yang Menangani'),
-                        Infolists\Components\TextEntry::make('karyawan.email')
-                            ->label('Email Sales')
-                            ->visible(fn($record) => !empty($record->karyawan?->email)),
-                        Infolists\Components\TextEntry::make('karyawan.telepon')
-                            ->label('Telepon Sales')
-                            ->visible(fn($record) => !empty($record->karyawan?->telepon)),
-                        Infolists\Components\TextEntry::make('dikonfirmasiOleh.name')
-                            ->label('Dikonfirmasi Oleh'),
-                        Infolists\Components\TextEntry::make('tanggal_konfirmasi')
-                            ->label('Tanggal Konfirmasi')
-                            ->dateTime('d F Y, H:i'),
-                    ])->columns(2),
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('tanggal_request')
+                                    ->label('Tanggal Request')
+                                    ->icon('heroicon-o-plus')
+                                    ->color('info')
+                                    ->weight('semibold')
+                                    ->dateTime('d F Y, H:i'),
+
+                                Infolists\Components\TextEntry::make('tanggal_konfirmasi')
+                                    ->label('Tanggal Konfirmasi')
+                                    ->icon('heroicon-o-check-circle')
+                                    ->color('success')
+                                    ->weight('semibold')
+                                    ->dateTime('d F Y, H:i')
+                                    ->placeholder('Belum dikonfirmasi'),
+
+                                Infolists\Components\TextEntry::make('dikonfirmasiOleh.name')
+                                    ->label('Dikonfirmasi Oleh')
+                                    ->icon('heroicon-o-user-check')
+                                    ->color('primary')
+                                    ->weight('semibold')
+                                    ->placeholder('Belum dikonfirmasi'),
+                            ]),
+
+
+                        Infolists\Components\Group::make([
+                            Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
+                                ->label('Sales yang Menangani')
+                                ->icon('heroicon-o-user-tie')
+                                ->color('primary')
+                                ->weight('bold')
+                                ->size('lg'),
+
+                            Infolists\Components\Grid::make(2)
+                                ->schema([
+                                    Infolists\Components\TextEntry::make('karyawan.email')
+                                        ->label('Email Sales')
+                                        ->icon('heroicon-o-envelope')
+                                        ->color('gray')
+                                        ->copyable()
+                                        ->url(fn($state) => $state ? "mailto:{$state}" : null)
+                                        ->openUrlInNewTab()
+                                        ->visible(fn($record) => !empty($record->karyawan?->email)),
+
+                                    Infolists\Components\TextEntry::make('karyawan.telepon')
+                                        ->label('Telepon Sales')
+                                        ->icon('heroicon-o-phone')
+                                        ->color('success')
+                                        ->copyable()
+                                        ->url(fn($state) => $state ? "tel:{$state}" : null)
+                                        ->visible(fn($record) => !empty($record->karyawan?->telepon)),
+                                ]),
+                        ])
+                            ->label('👨‍💼 Informasi Sales'),
+                    ])
+                    ->collapsed()
+                    ->collapsible(),
             ]);
     }
 

@@ -313,81 +313,279 @@ class PresensiResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Informasi Karyawan')
+                // Header Card dengan informasi karyawan
+                Infolists\Components\Section::make('👤 Informasi Karyawan')
+                    ->description('Data lengkap karyawan yang melakukan presensi')
+                    ->icon('heroicon-o-user-circle')
                     ->schema([
-                        Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
-                            ->label('Nama Lengkap'),
-                        Infolists\Components\TextEntry::make('karyawan.nip')
-                            ->label('NIP'),
-                        Infolists\Components\TextEntry::make('karyawan.jabatan')
-                            ->label('Jabatan'),
-                        Infolists\Components\TextEntry::make('karyawan.departemen')
-                            ->label('Departemen'),
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('karyawan.nama_lengkap')
+                                    ->label('Nama Lengkap')
+                                    ->icon('heroicon-o-identification')
+                                    ->copyable()
+                                    ->weight('bold')
+                                    ->size('lg'),
+                                Infolists\Components\TextEntry::make('karyawan.nip')
+                                    ->label('NIP')
+                                    ->icon('heroicon-o-hashtag')
+                                    ->copyable()
+                                    ->badge()
+                                    ->color('primary'),
+                                Infolists\Components\TextEntry::make('karyawan.jabatan')
+                                    ->label('Jabatan')
+                                    ->icon('heroicon-o-briefcase')
+                                    ->badge()
+                                    ->color('info'),
+                                Infolists\Components\TextEntry::make('karyawan.departemen')
+                                    ->label('Departemen')
+                                    ->icon('heroicon-o-building-office')
+                                    ->badge()
+                                    ->color('gray'),
+                            ]),
                     ])
-                    ->columns(2),
 
-                Infolists\Components\Section::make('Detail Presensi')
+                    ->columnSpan(2),
+
+                // Status Card dengan visualisasi menarik
+                Infolists\Components\Section::make('📊 Status Presensi')
+                    ->description('Ringkasan status kehadiran hari ini')
+                    ->icon('heroicon-o-chart-bar-square')
                     ->schema([
-                        Infolists\Components\TextEntry::make('tanggal')
-                            ->label('Tanggal')
-                            ->date('d M Y'),
-                        Infolists\Components\TextEntry::make('status')
-                            ->label('Status')
-                            ->badge()
-                            ->color(fn($state) => match ($state) {
-                                Presensi::STATUS_HADIR => 'success',
-                                Presensi::STATUS_TERLAMBAT => 'warning',
-                                Presensi::STATUS_TIDAK_HADIR => 'danger',
-                                default => 'secondary',
-                            })
-                            ->formatStateUsing(fn($state) => Presensi::getStatusOptions()[$state] ?? $state),
-                        Infolists\Components\TextEntry::make('jam_masuk')
-                            ->label('Jam Masuk')
-                            ->time('H:i'),
-                        Infolists\Components\TextEntry::make('jam_pulang')
-                            ->label('Jam Pulang')
-                            ->time('H:i')
-                            ->placeholder('-'),
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('tanggal')
+                                    ->label('Tanggal')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->date('l, d F Y')
+                                    ->weight('bold')
+                                    ->color('primary'),
+                                Infolists\Components\TextEntry::make('status')
+                                    ->label('Status Kehadiran')
+                                    ->icon('heroicon-o-check-circle')
+                                    ->badge()
+                                    ->size('lg')
+                                    ->color(fn($state) => match ($state) {
+                                        Presensi::STATUS_HADIR => 'success',
+                                        Presensi::STATUS_TERLAMBAT => 'warning',
+                                        Presensi::STATUS_TIDAK_HADIR => 'danger',
+                                        default => 'secondary',
+                                    })
+                                    ->formatStateUsing(fn($state) => Presensi::getStatusOptions()[$state] ?? $state),
+                                Infolists\Components\TextEntry::make('durasi_kerja')
+                                    ->label('Durasi Kerja')
+                                    ->icon('heroicon-o-clock')
+                                    ->state(function ($record) {
+                                        if ($record->jam_masuk && $record->jam_pulang) {
+                                            $masuk = \Carbon\Carbon::parse($record->jam_masuk);
+                                            $pulang = \Carbon\Carbon::parse($record->jam_pulang);
+                                            return $masuk->diffForHumans($pulang, true);
+                                        }
+                                        return 'Belum selesai';
+                                    })
+                                    ->badge()
+                                    ->color('info'),
+                            ]),
+                    ])
+                    ->columnSpan(2),
+
+                // Detail Waktu dengan timeline
+                Infolists\Components\Section::make('⏰ Detail Waktu')
+                    ->description('Catatan waktu masuk dan pulang')
+                    ->icon('heroicon-o-clock')
+                    ->schema([
+                        Infolists\Components\Split::make([
+                            // Waktu Masuk
+                            Infolists\Components\Group::make([
+                                Infolists\Components\TextEntry::make('jam_masuk')
+                                    ->label('🟢 Waktu Masuk')
+                                    ->time('H:i:s')
+                                    ->size('xl')
+                                    ->weight('bold')
+                                    ->color('success')
+                                    ->placeholder('Belum check-in'),
+                                Infolists\Components\TextEntry::make('status_keterlambatan')
+                                    ->label('Status')
+                                    ->state(function ($record) {
+                                        if (!$record->jam_masuk)
+                                            return null;
+                                        $jamMasuk = \Carbon\Carbon::parse($record->jam_masuk);
+                                        $jamStandar = \Carbon\Carbon::parse('08:00:00');
+                                        if ($jamMasuk->gt($jamStandar)) {
+                                            $terlambat = $jamMasuk->diffInMinutes($jamStandar);
+                                            return "Terlambat {$terlambat} menit";
+                                        }
+                                        return 'Tepat waktu';
+                                    })
+                                    ->badge()
+                                    ->color(fn($state) => str_contains($state ?? '', 'Terlambat') ? 'warning' : 'success'),
+                            ])->columnSpan(1),
+
+                            // Waktu Pulang
+                            Infolists\Components\Group::make([
+                                Infolists\Components\TextEntry::make('jam_pulang')
+                                    ->label('🔴 Waktu Pulang')
+                                    ->time('H:i:s')
+                                    ->size('xl')
+                                    ->weight('bold')
+                                    ->color('danger')
+                                    ->placeholder('Belum check-out'),
+                                Infolists\Components\TextEntry::make('status_pulang')
+                                    ->label('Status')
+                                    ->state(function ($record) {
+                                        if (!$record->jam_pulang)
+                                            return 'Masih bekerja';
+                                        return 'Sudah pulang';
+                                    })
+                                    ->badge()
+                                    ->color(fn($state) => $state === 'Sudah pulang' ? 'success' : 'warning'),
+                            ])->columnSpan(1),
+                        ]),
+
                         Infolists\Components\TextEntry::make('keterangan_terlambat')
-                            ->label('Keterangan Terlambat')
-                            ->placeholder('-'),
+                            ->label('💬 Alasan Keterlambatan')
+                            ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                            ->placeholder('Tidak ada keterangan')
+                            ->columnSpanFull()
+                            ->visible(fn($record) => !empty($record->keterangan_terlambat)),
                     ])
-                    ->columns(2),
+                    ->collapsible()
+                    ->columnSpan(2),
 
-                Infolists\Components\Section::make('Dokumentasi')
+                // Dokumentasi dengan preview yang lebih baik
+                Infolists\Components\Section::make('📸 Dokumentasi Foto')
+                    ->description('Foto selfie saat check-in dan check-out')
+                    ->icon('heroicon-o-camera')
                     ->schema([
-                        Infolists\Components\ImageEntry::make('foto_masuk')
-                            ->label('Foto Masuk')
-                            ->height(200),
-                        Infolists\Components\ImageEntry::make('foto_pulang')
-                            ->label('Foto Pulang')
-                            ->height(200),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+                        Infolists\Components\Split::make([
+                            Infolists\Components\Group::make([
+                                Infolists\Components\ImageEntry::make('foto_masuk')
+                                    ->label('📷 Foto Check-In')
+                                    ->height(250)
+                                    ->width(250)
+                                    ->square()
+                                    ->extraAttributes(['class' => 'rounded-lg shadow-lg'])
+                                    ->placeholder('Tidak ada foto masuk'),
+                            ])->columnSpan(1),
 
-                Infolists\Components\Section::make('Lokasi GPS')
+                            Infolists\Components\Group::make([
+                                Infolists\Components\ImageEntry::make('foto_pulang')
+                                    ->label('📷 Foto Check-Out')
+                                    ->height(250)
+                                    ->width(250)
+                                    ->square()
+                                    ->extraAttributes(['class' => 'rounded-lg shadow-lg'])
+                                    ->placeholder('Tidak ada foto pulang'),
+                            ])->columnSpan(1),
+                        ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpan(2),
+
+                // Lokasi GPS dengan peta
+                Infolists\Components\Section::make('🗺️ Informasi Lokasi')
+                    ->description('Koordinat GPS saat melakukan presensi')
+                    ->icon('heroicon-o-map-pin')
                     ->schema([
-                        Infolists\Components\TextEntry::make('latitude_masuk')
-                            ->label('Latitude Masuk'),
-                        Infolists\Components\TextEntry::make('longitude_masuk')
-                            ->label('Longitude Masuk'),
-                        Infolists\Components\TextEntry::make('latitude_pulang')
-                            ->label('Latitude Pulang'),
-                        Infolists\Components\TextEntry::make('longitude_pulang')
-                            ->label('Longitude Pulang'),
-                    ])
-                    ->columns(2)
-                    ->collapsible(),
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                // Lokasi Check-In
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('lokasi_masuk')
+                                        ->label('📍 Lokasi Check-In')
+                                        ->state(function ($record) {
+                                            if ($record->latitude_masuk && $record->longitude_masuk) {
+                                                return "{$record->latitude_masuk}, {$record->longitude_masuk}";
+                                            }
+                                            return 'Lokasi tidak tersedia';
+                                        })
+                                        ->copyable()
+                                        ->icon('heroicon-o-map-pin')
+                                        ->badge()
+                                        ->color('success'),
+                                    Infolists\Components\Actions::make([
+                                        Infolists\Components\Actions\Action::make('lihat_peta_masuk')
+                                            ->label('Lihat di Peta')
+                                            ->icon('heroicon-o-map')
+                                            ->color('primary')
+                                            ->url(fn($record) => $record->latitude_masuk && $record->longitude_masuk
+                                                ? "https://www.google.com/maps?q={$record->latitude_masuk},{$record->longitude_masuk}"
+                                                : null)
+                                            ->openUrlInNewTab()
+                                            ->visible(fn($record) => $record->latitude_masuk && $record->longitude_masuk),
+                                    ]),
+                                ]),
 
-                Infolists\Components\Section::make('Keterangan')
+                                // Lokasi Check-Out
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('lokasi_pulang')
+                                        ->label('📍 Lokasi Check-Out')
+                                        ->state(function ($record) {
+                                            if ($record->latitude_pulang && $record->longitude_pulang) {
+                                                return "{$record->latitude_pulang}, {$record->longitude_pulang}";
+                                            }
+                                            return 'Belum check-out';
+                                        })
+                                        ->copyable()
+                                        ->icon('heroicon-o-map-pin')
+                                        ->badge()
+                                        ->color('danger'),
+                                    Infolists\Components\Actions::make([
+                                        Infolists\Components\Actions\Action::make('lihat_peta_pulang')
+                                            ->label('Lihat di Peta')
+                                            ->icon('heroicon-o-map')
+                                            ->color('primary')
+                                            ->url(fn($record) => $record->latitude_pulang && $record->longitude_pulang
+                                                ? "https://www.google.com/maps?q={$record->latitude_pulang},{$record->longitude_pulang}"
+                                                : null)
+                                            ->openUrlInNewTab()
+                                            ->visible(fn($record) => $record->latitude_pulang && $record->longitude_pulang),
+                                    ]),
+                                ]),
+                            ]),
+                    ])
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpan(2),
+
+                // Catatan tambahan
+                Infolists\Components\Section::make('📝 Catatan & Keterangan')
+                    ->description('Informasi tambahan mengenai presensi')
+                    ->icon('heroicon-o-document-text')
                     ->schema([
                         Infolists\Components\TextEntry::make('keterangan')
                             ->label('Keterangan')
-                            ->placeholder('Tidak ada keterangan'),
+                            ->icon('heroicon-o-pencil-square')
+                            ->placeholder('Tidak ada keterangan khusus')
+                            ->columnSpanFull(),
+
+                        // Metadata
+                        Infolists\Components\Grid::make(3)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('created_at')
+                                    ->label('Dibuat pada')
+                                    ->icon('heroicon-o-calendar')
+                                    ->dateTime('d M Y, H:i')
+                                    ->color('gray'),
+                                Infolists\Components\TextEntry::make('updated_at')
+                                    ->label('Diperbarui pada')
+                                    ->icon('heroicon-o-arrow-path')
+                                    ->dateTime('d M Y, H:i')
+                                    ->color('gray'),
+                                Infolists\Components\TextEntry::make('id')
+                                    ->label('ID Presensi')
+                                    ->icon('heroicon-o-hashtag')
+                                    ->badge()
+                                    ->color('gray')
+                                    ->copyable(),
+                            ]),
                     ])
-                    ->collapsible(),
-            ]);
+                    ->collapsible()
+                    ->collapsed()
+                    ->columnSpan(2),
+            ])
+            ->columns(2);
     }
 
     public static function getRelations(): array

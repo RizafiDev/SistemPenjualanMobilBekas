@@ -3,6 +3,11 @@
 namespace App\Filament\Resources\PenggajianResource\Pages;
 
 use App\Filament\Resources\PenggajianResource;
+use App\Filament\Resources\PenggajianResource\Widgets\PenggajianChartWidget;
+use App\Filament\Resources\PenggajianResource\Widgets\PenggajianStatsWidget;
+use App\Filament\Resources\PenggajianResource\Widgets\PenggajianStatusWidget;
+use App\Filament\Resources\PenggajianResource\Widgets\RecentPenggajianWidget;
+use App\Filament\Resources\PenggajianResource\Widgets\TopEarnersWidget;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -13,10 +18,17 @@ class ListPenggajians extends ListRecords
 {
     protected static string $resource = PenggajianResource::class;
 
-    protected function getHeaderActions(): array
+
+
+    protected function getHeaderWidgets(): array
     {
         return [
-            Actions\CreateAction::make(),
+            PenggajianChartWidget::class,
+            PenggajianStatsWidget::class,
+            PenggajianStatusWidget::class,
+            TopEarnersWidget::class,
+            RecentPenggajianWidget::class,
+
         ];
     }
 
@@ -37,6 +49,12 @@ class ListPenggajians extends ListRecords
             'batal' => Tab::make('Batal')
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', Penggajian::STATUS_BATAL))
                 ->badge($this->getModel()::where('status', Penggajian::STATUS_BATAL)->count()),
+        ];
+    }
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\CreateAction::make(),
         ];
     }
 }

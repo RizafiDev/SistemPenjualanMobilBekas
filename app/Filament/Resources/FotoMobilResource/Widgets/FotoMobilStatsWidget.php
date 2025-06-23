@@ -1,8 +1,7 @@
 <?php
 
-// app/Filament/Widgets/FotoMobilStatsWidget.php
 
-namespace App\Filament\Widgets;
+namespace App\Filament\Resources\FotoMobilResource\Widgets;
 
 use App\Models\FotoMobil;
 use Filament\Widgets\StatsOverviewWidget as BaseWidget;

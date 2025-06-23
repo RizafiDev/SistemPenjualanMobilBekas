@@ -8,59 +8,89 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
+    /**
+     * Get company information from config
+     */
+    private function getCompanyInfo(): array
+    {
+        return [
+            'name' => config('app.company_name', 'AUTO DEALER SYSTEM'),
+            'address' => config('app.company_address', 'Jl. Raya No. 123, Kota, Provinsi'),
+            'phone' => config('app.company_phone', '(021) 1234-5678'),
+            'email' => config('app.company_email', 'info@autodealer.com'),
+            'website' => config('app.company_website', 'www.autodealer.com'),
+            'logo' => config('app.company_logo', null),
+        ];
+    }
+
     public function printInvoice(Penjualan $penjualan)
     {
         // Load relationships yang diperlukan
-        // Menggunakan nested relationship untuk mengakses merek melalui mobil
         $penjualan->load([
-            'stokMobil.mobil.merek',  // Mengakses merek melalui mobil
-            'stokMobil.varian',       // Mengakses varian
+            'stokMobil.mobil.merek',
+            'stokMobil.varian',
             'pelanggan',
-            'karyawan'
+            'karyawan',
+            'pembayarans'
         ]);
 
         // Data untuk invoice
         $data = [
             'penjualan' => $penjualan,
-            'company' => [
-                'name' => config('app.name', 'Dealer Mobil XYZ'),
-                'address' => 'Jl. Contoh No. 123, Surakarta',
-                'phone' => '(0271) 123-4567',
-                'email' => 'info@dealermobil.com',
-            ]
+            'company' => $this->getCompanyInfo(),
+            'printDate' => now()->format('d/m/Y H:i:s'),
         ];
 
-        // Generate PDF
-        $pdf = Pdf::loadView('invoices.penjualan', $data);
-        $pdf->setPaper('A4', 'portrait');
+        // Return view untuk print
+        return view('invoices.penjualan', $data);
+    }
 
-        // Return PDF untuk download atau view
-        return $pdf->stream("Invoice-{$penjualan->no_faktur}.pdf");
+    public function previewInvoice(Penjualan $penjualan)
+    {
+        // Load relationships yang diperlukan
+        $penjualan->load([
+            'stokMobil.mobil.merek',
+            'stokMobil.varian',
+            'pelanggan',
+            'karyawan',
+            'pembayarans'
+        ]);
+
+        // Data untuk invoice
+        $data = [
+            'penjualan' => $penjualan,
+            'company' => $this->getCompanyInfo(),
+            'printDate' => now()->format('d/m/Y H:i:s'),
+            'isPreview' => true,
+        ];
+
+        // Return view untuk preview
+        return view('invoices.penjualan', $data);
     }
 
     public function downloadInvoice(Penjualan $penjualan)
     {
         // Load relationships yang diperlukan
         $penjualan->load([
-            'stokMobil.mobil.merek',  // Mengakses merek melalui mobil
-            'stokMobil.varian',       // Mengakses varian
+            'stokMobil.mobil.merek',
+            'stokMobil.varian',
             'pelanggan',
-            'karyawan'
+            'karyawan',
+            'pembayarans'
         ]);
 
+        // Data untuk invoice
         $data = [
             'penjualan' => $penjualan,
-            'company' => [
-                'name' => config('app.name', 'Dealer Mobil XYZ'),
-                'address' => 'Jl. Contoh No. 123, Surakarta',
-                'phone' => '(0271) 123-4567',
-                'email' => 'info@dealermobil.com',
-            ]
+            'company' => $this->getCompanyInfo(),
+            'printDate' => now()->format('d/m/Y H:i:s'),
         ];
 
+        // Generate PDF
         $pdf = Pdf::loadView('invoices.penjualan', $data);
         $pdf->setPaper('A4', 'portrait');
 
+        // Return PDF untuk download
         return $pdf->download("Invoice-{$penjualan->no_faktur}.pdf");
     }
 }

@@ -308,99 +308,254 @@ class PembayaranResource extends Resource
     {
         return $infolist
             ->schema([
-                Infolists\Components\Section::make('Informasi Pembayaran')
+                // Header Section dengan styling yang menarik
+                Infolists\Components\Section::make('Ringkasan Pembayaran')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Infolists\Components\Grid::make(12)
                             ->schema([
-                                Infolists\Components\TextEntry::make('no_kwitansi')
-                                    ->label('No. Kwitansi')
-                                    ->copyable(),
+                                // Kartu utama dengan jumlah pembayaran
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('jumlah')
+                                        ->label('Total Pembayaran')
+                                        ->formatStateUsing(fn(string $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
+                                        ->weight('bold')
+                                        ->size('xl')
+                                        ->color('success'),
 
-                                Infolists\Components\TextEntry::make('penjualan.no_faktur')
-                                    ->label('No. Faktur')
-                                    ->color('primary'),
+                                    Infolists\Components\TextEntry::make('jenis')
+                                        ->label('Status')
+                                        ->formatStateUsing(fn(string $state): string => Pembayaran::JENIS[$state] ?? $state)
+                                        ->badge()
+                                        ->size('lg')
+                                        ->color(fn(Pembayaran $record): string => $record->jenis_badge_color),
+                                ])
+                                    ->columnSpan(4),
 
-                                Infolists\Components\TextEntry::make('penjualan.pelanggan.nama_lengkap')
-                                    ->label('Pelanggan'),
+                                // Info dasar
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('no_kwitansi')
+                                        ->label('No. Kwitansi')
+                                        ->copyable()
+                                        ->icon('heroicon-o-document-text')
+                                        ->iconColor('primary'),
 
-                                Infolists\Components\TextEntry::make('jumlah')
-                                    ->label('Jumlah Pembayaran')
-                                    ->formatStateUsing(fn(string $state): string => 'Rp ' . number_format($state, 0, ',', '.'))
-                                    ->weight('bold')
-                                    ->size('lg'),
+                                    Infolists\Components\TextEntry::make('penjualan.no_faktur')
+                                        ->label('No. Faktur')
+                                        ->color('primary')
+                                        ->icon('heroicon-o-receipt-percent')
+                                        ->copyable(),
 
-                                Infolists\Components\TextEntry::make('jenis')
-                                    ->label('Jenis Pembayaran')
-                                    ->formatStateUsing(fn(string $state): string => Pembayaran::JENIS[$state] ?? $state)
-                                    ->badge()
-                                    ->color(fn(Pembayaran $record): string => $record->jenis_badge_color),
+                                    Infolists\Components\TextEntry::make('tanggal_bayar')
+                                        ->label('Tanggal Bayar')
+                                        ->date('d F Y')
+                                        ->icon('heroicon-o-calendar-days')
+                                        ->iconColor('warning'),
+                                ])
+                                    ->columnSpan(4),
 
-                                Infolists\Components\TextEntry::make('tanggal_bayar')
-                                    ->label('Tanggal Bayar')
-                                    ->date('d/m/Y'),
+                                // Info pelanggan
+                                Infolists\Components\Group::make([
+                                    Infolists\Components\TextEntry::make('penjualan.pelanggan.nama_lengkap')
+                                        ->label('Pelanggan')
+                                        ->icon('heroicon-o-user')
+                                        ->iconColor('info')
+                                        ->weight('semibold'),
+
+                                    Infolists\Components\TextEntry::make('penjualan.pelanggan.telepon')
+                                        ->label('Telepon')
+                                        ->icon('heroicon-o-phone')
+                                        ->visible(fn(Pembayaran $record): bool => !empty($record->penjualan?->pelanggan?->telepon)),
+
+                                    Infolists\Components\TextEntry::make('penjualan.pelanggan.email')
+                                        ->label('Email')
+                                        ->icon('heroicon-o-envelope')
+                                        ->visible(fn(Pembayaran $record): bool => !empty($record->penjualan?->pelanggan?->email)),
+                                ])
+                                    ->columnSpan(4),
                             ]),
 
+                        // Separator untuk keterangan
                         Infolists\Components\TextEntry::make('keterangan')
-                            ->label('Keterangan')
+                            ->label('Keterangan Pembayaran')
                             ->columnSpanFull()
-                            ->placeholder('Tidak ada keterangan'),
+                            ->placeholder('Tidak ada keterangan khusus')
+                            ->icon('heroicon-o-chat-bubble-left-ellipsis')
+                            ->visible(fn(Pembayaran $record): bool => !empty($record->keterangan)),
                     ])
-                    ->columns(2),
+                    ->icon('heroicon-o-banknotes')
+                    ->iconColor('success'),
 
-                Infolists\Components\Section::make('Metode Pembayaran')
+                // Detail Metode Pembayaran
+                Infolists\Components\Section::make('Detail Metode Pembayaran')
                     ->schema([
-                        Infolists\Components\Grid::make(3)
+                        Infolists\Components\Grid::make(12)
                             ->schema([
                                 Infolists\Components\TextEntry::make('metode')
                                     ->label('Metode Pembayaran')
                                     ->formatStateUsing(fn(string $state): string => Pembayaran::METODE[$state] ?? $state)
                                     ->badge()
-                                    ->color(fn(Pembayaran $record): string => $record->metode_badge_color),
+                                    ->size('lg')
+                                    ->color(fn(Pembayaran $record): string => $record->metode_badge_color)
+                                    ->columnSpan(4),
 
                                 Infolists\Components\TextEntry::make('bank')
-                                    ->label('Bank')
-                                    ->formatStateUsing(fn(?string $state): string => $state ? (Pembayaran::BANKS[$state] ?? $state) : '-')
-                                    ->visible(fn(Pembayaran $record): bool => !empty($record->bank)),
+                                    ->label('Bank/Penerbit')
+                                    ->formatStateUsing(fn(?string $state): string => $state ? (Pembayaran::BANKS[$state] ?? $state) : 'Tidak ada')
+                                    ->icon('heroicon-o-building-library')
+                                    ->iconColor('primary')
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->bank))
+                                    ->columnSpan(4),
 
                                 Infolists\Components\TextEntry::make('no_referensi')
-                                    ->label('No. Referensi')
-                                    ->placeholder('Tidak ada referensi')
+                                    ->label('No. Referensi/Transaksi')
+                                    ->placeholder('Tidak tersedia')
                                     ->copyable()
-                                    ->visible(fn(Pembayaran $record): bool => !empty($record->no_referensi)),
+                                    ->icon('heroicon-o-hashtag')
+                                    ->iconColor('warning')
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->no_referensi))
+                                    ->columnSpan(4),
                             ]),
-                    ]),
 
-                Infolists\Components\Section::make('Bukti & Catatan')
+                        // Info tambahan untuk transfer/kartu kredit
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('nama_pengirim')
+                                    ->label('Nama Pengirim')
+                                    ->icon('heroicon-o-user-circle')
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->nama_pengirim)),
+
+                                Infolists\Components\TextEntry::make('rekening_pengirim')
+                                    ->label('No. Rekening Pengirim')
+                                    ->icon('heroicon-o-credit-card')
+                                    ->copyable()
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->rekening_pengirim)),
+                            ])
+                            ->visible(fn(Pembayaran $record): bool => !empty($record->nama_pengirim) || !empty($record->rekening_pengirim)),
+                    ])
+                    ->icon('heroicon-o-credit-card')
+                    ->iconColor('primary'),
+
+                // Bukti & Dokumentasi
+                Infolists\Components\Section::make('Bukti & Dokumentasi')
                     ->schema([
                         Infolists\Components\ImageEntry::make('bukti_bayar')
                             ->label('Bukti Pembayaran')
+                            ->disk('public')
+                            ->height(300)
+                            ->width(400)
+                            ->extraAttributes(['class' => 'rounded-lg shadow-md'])
                             ->visible(fn(Pembayaran $record): bool => !empty($record->bukti_bayar))
-                            ->columnSpanFull(),
+                            ->columnSpan(6),
 
-                        Infolists\Components\TextEntry::make('catatan')
-                            ->label('Catatan')
-                            ->placeholder('Tidak ada catatan')
-                            ->columnSpanFull(),
+                        Infolists\Components\Group::make([
+                            Infolists\Components\TextEntry::make('catatan')
+                                ->label('Catatan Internal')
+                                ->placeholder('Tidak ada catatan tambahan')
+                                ->columnSpanFull()
+                                ->icon('heroicon-o-document-text'),
+
+                            Infolists\Components\TextEntry::make('verified_by')
+                                ->label('Diverifikasi Oleh')
+                                ->icon('heroicon-o-shield-check')
+                                ->iconColor('success')
+                                ->visible(fn(Pembayaran $record): bool => !empty($record->verified_by)),
+
+                            Infolists\Components\TextEntry::make('verified_at')
+                                ->label('Waktu Verifikasi')
+                                ->dateTime('d F Y, H:i')
+                                ->icon('heroicon-o-clock')
+                                ->visible(fn(Pembayaran $record): bool => !empty($record->verified_at)),
+                        ])
+                            ->columnSpan(6),
                     ])
                     ->collapsible()
-                    ->collapsed()
-                    ->visible(fn(Pembayaran $record): bool => !empty($record->bukti_bayar) || !empty($record->catatan)),
+                    ->persistCollapsed()
+                    ->visible(
+                        fn(Pembayaran $record): bool =>
+                        !empty($record->bukti_bayar) ||
+                        !empty($record->catatan) ||
+                        !empty($record->verified_by)
+                    )
+                    ->icon('heroicon-o-camera')
+                    ->iconColor('info'),
 
-                Infolists\Components\Section::make('Informasi Sistem')
+                // Riwayat & Audit Trail
+                Infolists\Components\Section::make('Riwayat & Informasi Sistem')
                     ->schema([
-                        Infolists\Components\Grid::make(2)
+                        Infolists\Components\Grid::make(3)
                             ->schema([
                                 Infolists\Components\TextEntry::make('created_at')
                                     ->label('Dibuat Pada')
-                                    ->dateTime('d/m/Y H:i:s'),
+                                    ->dateTime('d F Y, H:i:s')
+                                    ->icon('heroicon-o-plus-circle')
+                                    ->iconColor('success'),
 
                                 Infolists\Components\TextEntry::make('updated_at')
-                                    ->label('Diperbarui Pada')
-                                    ->dateTime('d/m/Y H:i:s'),
+                                    ->label('Terakhir Diubah')
+                                    ->dateTime('d F Y, H:i:s')
+                                    ->icon('heroicon-o-pencil-square')
+                                    ->iconColor('warning'),
+
+                                Infolists\Components\TextEntry::make('created_by')
+                                    ->label('Dibuat Oleh')
+                                    ->formatStateUsing(fn(?string $state): string => $state ?? 'Sistem')
+                                    ->icon('heroicon-o-user')
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->created_by)),
                             ]),
+
+                        // Status tracking
+                        Infolists\Components\Grid::make(2)
+                            ->schema([
+                                Infolists\Components\TextEntry::make('status_history')
+                                    ->label('Riwayat Status')
+                                    ->listWithLineBreaks()
+                                    ->bulleted()
+                                    ->visible(fn(Pembayaran $record): bool => !empty($record->status_history)),
+
+                                Infolists\Components\TextEntry::make('payment_gateway_response')
+                                    ->label('Response Gateway')
+                                    ->formatStateUsing(fn(?string $state): string => $state ? 'Berhasil' : 'Manual')
+                                    ->badge()
+                                    ->color(fn(?string $state): string => $state ? 'success' : 'gray')
+                                    ->visible(fn(Pembayaran $record): bool => isset($record->payment_gateway_response)),
+                            ])
+                            ->visible(
+                                fn(Pembayaran $record): bool =>
+                                !empty($record->status_history) ||
+                                isset($record->payment_gateway_response)
+                            ),
                     ])
                     ->collapsible()
-                    ->collapsed(),
+                    ->collapsed()
+                    ->persistCollapsed()
+                    ->icon('heroicon-o-clock')
+                    ->iconColor('gray'),
+
+                // Action buttons atau info tambahan
+                Infolists\Components\Section::make('')
+                    ->schema([
+                        Infolists\Components\Actions::make([
+                            Infolists\Components\Actions\Action::make('print')
+                                ->label('Cetak Kwitansi')
+                                ->icon('heroicon-o-printer')
+                                ->color('primary')
+                                ->url(fn(Pembayaran $record): string => route('pembayaran.print', $record))
+                                ->openUrlInNewTab(),
+
+                            Infolists\Components\Actions\Action::make('download')
+                                ->label('Download PDF')
+                                ->icon('heroicon-o-arrow-down-tray')
+                                ->color('success')
+                                ->url(fn(Pembayaran $record): string => route('pembayaran.pdf', $record)),
+
+                            Infolists\Components\Actions\Action::make('email')
+                                ->label('Kirim Email')
+                                ->icon('heroicon-o-envelope')
+                                ->color('info')
+                                ->visible(fn(Pembayaran $record): bool => !empty($record->penjualan?->pelanggan?->email)),
+                        ])
+                    ])
+                    ->hiddenLabel(),
             ]);
     }
 

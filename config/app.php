@@ -104,7 +104,21 @@ return [
             explode(',', env('APP_PREVIOUS_KEYS', ''))
         ),
     ],
-
+    /*
+        |--------------------------------------------------------------------------
+        | Company Information
+        |--------------------------------------------------------------------------
+        |
+        | This configuration holds the company information used in invoices and
+        | other official documents throughout the application.
+        |
+        */
+    'company_name' => env('COMPANY_NAME', 'AUTO DEALER SYSTEM'),
+    'company_address' => env('COMPANY_ADDRESS', 'Jl. Raya No. 123, Kota, Provinsi'),
+    'company_phone' => env('COMPANY_PHONE', '(021) 1234-5678'),
+    'company_email' => env('COMPANY_EMAIL', 'info@autodealer.com'),
+    'company_website' => env('COMPANY_WEBSITE', 'www.autodealer.com'),
+    'company_logo' => env('COMPANY_LOGO', null),
     /*
     |--------------------------------------------------------------------------
     | Maintenance Mode Driver

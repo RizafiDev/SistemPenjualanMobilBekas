@@ -16,6 +16,7 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components;
 use Filament\Support\Enums\FontWeight;
 use Filament\Tables\Actions\Action;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
 class LaporanPenjualanResource extends Resource
 {
@@ -332,78 +333,214 @@ class LaporanPenjualanResource extends Resource
     {
         return $infolist
             ->schema([
-                Components\Section::make('Informasi Periode')
+                // Header dengan styling khusus
+                Components\Section::make('📅 Informasi Periode')
+                    ->description('Detail informasi periode laporan penjualan')
+                    ->icon('heroicon-o-calendar-days')
+                    ->iconColor('primary')
+                    ->collapsible()
                     ->schema([
-                        Components\Grid::make(4)
+                        Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 2,
+                            'lg' => 4,
+                        ])
                             ->schema([
                                 Components\TextEntry::make('tanggal')
-                                    ->date('d F Y'),
+                                    ->label('📅 Tanggal')
+                                    ->date('d F Y')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('primary')
+                                    ->badge()
+                                    ->icon('heroicon-m-calendar'),
+
                                 Components\TextEntry::make('nama_bulan')
-                                    ->label('Bulan'),
-                                Components\TextEntry::make('tahun'),
+                                    ->label('🗓️ Bulan')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('info')
+                                    ->badge()
+                                    ->icon('heroicon-m-calendar-days'),
+
+                                Components\TextEntry::make('tahun')
+                                    ->label('📆 Tahun')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('warning')
+                                    ->badge()
+                                    ->icon('heroicon-m-clock'),
+
                                 Components\TextEntry::make('minggu')
-                                    ->label('Minggu Ke'),
+                                    ->label('📊 Minggu Ke')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('success')
+                                    ->badge()
+                                    ->icon('heroicon-m-chart-bar'),
                             ]),
                     ]),
 
-                Components\Section::make('Statistik Penjualan')
+                // Statistik dengan kartu yang lebih menarik
+                Components\Section::make('📈 Statistik Penjualan')
+                    ->description('Ringkasan performa penjualan dalam periode ini')
+                    ->icon('heroicon-o-chart-bar-square')
+                    ->iconColor('success')
+                    ->collapsible()
                     ->schema([
-                        Components\Grid::make(3)
+                        // Metrik utama dengan styling khusus
+                        Components\Grid::make([
+                            'default' => 1,
+                            'md' => 3,
+                        ])
                             ->schema([
                                 Components\TextEntry::make('total_penjualan')
-                                    ->label('Total Penjualan')
+                                    ->label('🎯 Total Penjualan')
                                     ->suffix(' unit')
                                     ->weight(FontWeight::Bold)
-                                    ->color('primary'),
+                                    ->size(TextEntrySize::Large)
+                                    ->color('primary')
+                                    ->badge()
+                                    ->icon('heroicon-m-shopping-cart'),
+
                                 Components\TextEntry::make('total_nilai_penjualan')
-                                    ->label('Total Nilai')
+                                    ->label('💰 Total Nilai')
                                     ->money('IDR')
                                     ->weight(FontWeight::Bold)
-                                    ->color('success'),
+                                    ->size(TextEntrySize::Large)
+                                    ->color('success')
+                                    ->badge()
+                                    ->icon('heroicon-m-banknotes'),
+
                                 Components\TextEntry::make('rata_rata_penjualan')
-                                    ->label('Rata-rata')
-                                    ->money('IDR'),
+                                    ->label('📊 Rata-rata')
+                                    ->money('IDR')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('info')
+                                    ->badge()
+                                    ->icon('heroicon-m-calculator'),
                             ]),
 
-                        Components\Grid::make(4)
+
+                        // Detail penjualan dengan card styling
+                        Components\Grid::make([
+                            'default' => 1,
+                            'sm' => 2,
+                            'lg' => 4,
+                        ])
                             ->schema([
                                 Components\TextEntry::make('penjualan_tunai')
-                                    ->label('Penjualan Tunai')
-                                    ->suffix(' unit'),
+                                    ->label('💵 Penjualan Tunai')
+                                    ->suffix(' unit')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('emerald')
+                                    ->badge()
+                                    ->icon('heroicon-m-credit-card'),
+
                                 Components\TextEntry::make('penjualan_kredit')
-                                    ->label('Penjualan Kredit')
-                                    ->suffix(' unit'),
+                                    ->label('🏦 Penjualan Kredit')
+                                    ->suffix(' unit')
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('orange')
+                                    ->badge()
+                                    ->icon('heroicon-m-building-library'),
+
                                 Components\TextEntry::make('persentase_tunai')
-                                    ->label('% Tunai')
-                                    ->suffix('%'),
+                                    ->label('📈 % Tunai')
+                                    ->suffix('%')
+                                    ->weight(FontWeight::Medium)
+                                    ->color('green')
+                                    ->badge()
+                                    ->icon('heroicon-m-arrow-trending-up'),
+
                                 Components\TextEntry::make('persentase_kredit')
-                                    ->label('% Kredit')
-                                    ->suffix('%'),
+                                    ->label('📉 % Kredit')
+                                    ->suffix('%')
+                                    ->weight(FontWeight::Medium)
+                                    ->color('amber')
+                                    ->badge()
+                                    ->icon('heroicon-m-arrow-trending-down'),
                             ]),
                     ]),
 
-                Components\Section::make('Top Performers')
+                // Top Performers dengan styling mewah
+                Components\Section::make('🏆 Top Performers')
+                    ->description('Pencapaian terbaik dalam periode ini')
+                    ->icon('heroicon-o-trophy')
+                    ->iconColor('warning')
+                    ->collapsible()
                     ->schema([
-                        Components\Grid::make(2)
+                        Components\Grid::make([
+                            'default' => 1,
+                            'lg' => 2,
+                        ])
                             ->schema([
                                 Components\TextEntry::make('top_merek_formatted')
-                                    ->label('Top Merek')
-                                    ->html(),
+                                    ->label('🏷️ Top Merek')
+                                    ->html()
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('primary')
+                                    ->icon('heroicon-m-tag')
+                                    ->copyable()
+                                    ->copyMessage('Top merek berhasil disalin!')
+                                    ->copyMessageDuration(1500),
+
                                 Components\TextEntry::make('top_model_formatted')
-                                    ->label('Top Model')
-                                    ->html(),
+                                    ->label('🚗 Top Model')
+                                    ->html()
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('info')
+                                    ->icon('heroicon-m-cube')
+                                    ->copyable()
+                                    ->copyMessage('Top model berhasil disalin!')
+                                    ->copyMessageDuration(1500),
                             ]),
 
-                        Components\Grid::make(2)
+                        Components\Grid::make([
+                            'default' => 1,
+                            'lg' => 2,
+                        ])
                             ->schema([
                                 Components\TextEntry::make('top_kategori_formatted')
-                                    ->label('Top Kategori')
-                                    ->html(),
+                                    ->label('📂 Top Kategori')
+                                    ->html()
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('success')
+                                    ->icon('heroicon-m-folder')
+                                    ->copyable()
+                                    ->copyMessage('Top kategori berhasil disalin!')
+                                    ->copyMessageDuration(1500),
+
                                 Components\TextEntry::make('top_sales_formatted')
-                                    ->label('Top Sales')
-                                    ->html(),
+                                    ->label('👤 Top Sales')
+                                    ->html()
+                                    ->weight(FontWeight::SemiBold)
+                                    ->color('warning')
+                                    ->icon('heroicon-m-user-circle')
+                                    ->copyable()
+                                    ->copyMessage('Top sales berhasil disalin!')
+                                    ->copyMessageDuration(1500),
                             ]),
                     ]),
+
+                // Tambahan section untuk insights (opsional)
+                Components\Section::make('💡 Insights & Actions')
+                    ->description('Saran dan tindakan berdasarkan data')
+                    ->icon('heroicon-o-light-bulb')
+                    ->iconColor('amber')
+                    ->collapsible()
+                    ->collapsed()
+                    ->schema([
+                        Components\Grid::make(1)
+                            ->schema([
+                                Components\TextEntry::make('insights')
+                                    ->label('📝 Catatan')
+                                    ->default('Analisis menunjukkan performa yang baik pada periode ini. Pertahankan strategi yang sudah berjalan dan fokus pada peningkatan penjualan kredit.')
+                                    ->color('gray')
+                                    ->icon('heroicon-m-document-text')
+                                    ->columnSpanFull(),
+                            ]),
+                    ]),
+            ])
+            ->columns([
+                'default' => 1,
+                'lg' => 3,
             ]);
     }
 

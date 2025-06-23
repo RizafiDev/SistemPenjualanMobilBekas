@@ -8,20 +8,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
     </style>
 </head>
 
 <body class="bg-gray-50 text-gray-800">
     <div class="max-w-4xl mx-auto bg-white shadow-sm border border-gray-200 my-8">
-        
+
         <!-- Header -->
         <div class="bg-slate-900 text-white p-8">
             <div class="text-center">
-                <h1 class="text-2xl font-semibold mb-2">PT. NAMA PERUSAHAAN</h1>
+                <h1 class="text-2xl font-semibold mb-2">{{ $company['name'] }}</h1>
                 <p class="text-slate-300 text-sm leading-relaxed">
-                    Jl. Alamat Perusahaan No. 123, Kota, Provinsi 12345<br>
-                    Telp: (021) 1234-5678 | Email: info@perusahaan.com
+                    {{ $company['address'] }}<br>
+                    Telp: {{ $company['phone'] }} | Email: {{ $company['email'] }}
+                    @if($company['website'])
+                        | Website: {{ $company['website'] }}
+                    @endif
                 </p>
                 <div class="mt-6 pt-4 border-t border-slate-700">
                     <h2 class="text-lg font-medium tracking-wide">SLIP GAJI KARYAWAN</h2>
@@ -65,7 +71,7 @@
 
         <!-- Main Content -->
         <div class="p-8 space-y-8">
-            
+
             <!-- Earnings Section -->
             <div>
                 <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Pendapatan</h3>
@@ -73,7 +79,8 @@
                     <table class="w-full">
                         <thead class="bg-gray-50">
                             <tr>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komponen</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komponen
+                                </th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
                             </tr>
                         </thead>
@@ -95,15 +102,15 @@
                             @if($penggajian->bonus > 0)
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-6 py-4 text-sm text-gray-900">Bonus</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-right text-green-600 font-mono">
+                                    <td class="px-6 py-4 text-right text-sm font-medium text-green-600 font-mono">
                                         Rp {{ number_format($penggajian->bonus, 2, ',', '.') }}
                                     </td>
                                 </tr>
                             @endif
                             @if($penggajian->lembur > 0)
                                 <tr class="hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-sm text-gray-900">Lembur</td>
-                                    <td class="px-6 py-4 text-sm font-medium text-right text-green-600 font-mono">
+                                    <td class="px-6 py-4 text-sm text-gray-900">Lembayaran</td>
+                                    <td class="px-6 py-4 text-right text-sm font-medium text-green-600 font-mono">
                                         Rp {{ number_format($penggajian->lembur, 2, ',', '.') }}
                                     </td>
                                 </tr>
@@ -135,7 +142,8 @@
                         <table class="w-full">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komponen</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Komponen
+                                    </th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
                                 </tr>
                             </thead>
@@ -179,7 +187,8 @@
             <!-- Net Salary Card -->
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 text-white text-center shadow-lg">
                 <p class="text-blue-100 text-sm font-medium mb-2">GAJI BERSIH</p>
-                <p class="text-3xl font-bold font-mono">Rp {{ number_format($penggajian->gaji_bersih, 2, ',', '.') }}</p>
+                <p class="text-3xl font-bold font-mono">Rp {{ number_format($penggajian->gaji_bersih, 2, ',', '.') }}
+                </p>
             </div>
 
             <!-- Summary Table -->
@@ -214,7 +223,9 @@
                     <div class="flex">
                         <div class="flex-shrink-0">
                             <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                                <path fill-rule="evenodd"
+                                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                    clip-rule="evenodd" />
                             </svg>
                         </div>
                         <div class="ml-3">
@@ -235,25 +246,36 @@
                 <div class="text-center">
                     <p class="text-sm text-gray-600 mb-4">Menerima,</p>
                     <div class="border-2 border-dashed border-gray-300 h-20 mb-4 rounded-lg bg-gray-50"></div>
-                    <p class="text-sm font-medium text-gray-900">{{ $penggajian->karyawan->nama_lengkap ?? 'Karyawan' }}</p>
+                    <p class="text-sm font-medium text-gray-900">{{ $penggajian->karyawan->nama_lengkap ?? 'Karyawan' }}
+                    </p>
                 </div>
             </div>
         </div>
 
         <!-- Footer -->
         <div class="bg-gray-50 px-8 py-4 border-t border-gray-200 text-center text-xs text-gray-500">
-            <p>Dokumen ini dicetak secara otomatis pada {{ now()->format('d F Y H:i:s') }}</p>
+            <p>Dokumen ini dicetak secara otomatis pada {{ $printDate }}</p>
             <p>Status: {{ $penggajian->status }} | ID: {{ $penggajian->id }}</p>
         </div>
     </div>
 
     <style>
         @media print {
-            body { background: white; }
-            .shadow-sm, .shadow-lg { box-shadow: none !important; }
-            .border { border-color: #000 !important; }
+            body {
+                background: white;
+            }
+
+            .shadow-sm,
+            .shadow-lg {
+                box-shadow: none !important;
+            }
+
+            .border {
+                border-color: #000 !important;
+            }
         }
     </style>
+
 </body>
 
 </html>

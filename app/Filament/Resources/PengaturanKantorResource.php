@@ -13,6 +13,9 @@ use Filament\Infolists\Infolist;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Support\Enums\FontWeight;
+use Filament\Forms\Components\Grid;
+use Filament\Infolists\Components\Fieldset;
+use Filament\Infolists\Components\TextEntry\TextEntrySize;
 
 class PengaturanKantorResource extends Resource
 {
@@ -227,70 +230,171 @@ class PengaturanKantorResource extends Resource
     {
         return $infolist
             ->schema([
-                Section::make('Informasi Kantor')
+                // Header Section dengan Icon
+                Section::make('📍 Informasi Kantor')
+                    ->description('Detail informasi dasar kantor')
                     ->schema([
                         TextEntry::make('nama_kantor')
                             ->label('Nama Kantor')
-                            ->weight(FontWeight::SemiBold),
+                            ->weight(FontWeight::Bold)
+                            ->size(TextEntrySize::Large)
+                            ->color('primary')
+                            ->icon('heroicon-o-building-office'),
 
                         TextEntry::make('alamat_kantor')
-                            ->label('Alamat Kantor'),
+                            ->label('Alamat Kantor')
+                            ->icon('heroicon-o-map-pin')
+                            ->copyable()
+                            ->copyMessage('Alamat berhasil disalin!')
+                            ->copyMessageDuration(1500),
                     ])
-                    ->columns(1),
+                    ->columns(1)
+                    ->collapsible()
+                    ->compact(),
 
-                Section::make('Lokasi & Radius')
+                // Location Section dengan Map Visual
+                Section::make('🗺️ Lokasi & Radius')
+                    ->description('Koordinat dan area cakupan kantor')
                     ->schema([
-                        TextEntry::make('latitude')
-                            ->label('Latitude')
-                            ->copyable(),
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('latitude')
+                                    ->label('Latitude')
+                                    ->icon('heroicon-o-globe-alt')
+                                    ->copyable()
+                                    ->copyMessage('Latitude disalin!')
+                                    ->badge()
+                                    ->color('info'),
 
-                        TextEntry::make('longitude')
-                            ->label('Longitude')
-                            ->copyable(),
+                                TextEntry::make('longitude')
+                                    ->label('Longitude')
+                                    ->icon('heroicon-o-globe-alt')
+                                    ->copyable()
+                                    ->copyMessage('Longitude disalin!')
+                                    ->badge()
+                                    ->color('info'),
 
-                        TextEntry::make('radius_meter')
-                            ->label('Radius')
-                            ->suffix(' meter'),
+                                TextEntry::make('radius_meter')
+                                    ->label('Radius Kantor')
+                                    ->suffix(' meter')
+                                    ->icon('heroicon-o-arrow-path-rounded-square')
+                                    ->badge()
+                                    ->color('warning')
+                                    ->weight(FontWeight::SemiBold),
+                            ]),
                     ])
-                    ->columns(3),
+                    ->collapsible()
+                    ->compact(),
 
-                Section::make('Jam Kerja')
+                // Working Hours dengan Visual Clock
+                Section::make('🕒 Jam Kerja')
+                    ->description('Pengaturan waktu kerja dan toleransi')
                     ->schema([
-                        TextEntry::make('jam_masuk')
-                            ->label('Jam Masuk')
-                            ->time('H:i'),
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('jam_masuk')
+                                    ->label('Jam Masuk')
+                                    ->time('H:i')
+                                    ->icon('heroicon-o-clock')
+                                    ->badge()
+                                    ->color('success')
+                                    ->weight(FontWeight::SemiBold),
 
-                        TextEntry::make('jam_pulang')
-                            ->label('Jam Pulang')
-                            ->time('H:i'),
+                                TextEntry::make('jam_pulang')
+                                    ->label('Jam Pulang')
+                                    ->time('H:i')
+                                    ->icon('heroicon-o-clock')
+                                    ->badge()
+                                    ->color('danger')
+                                    ->weight(FontWeight::SemiBold),
 
-                        TextEntry::make('toleransi_terlambat')
-                            ->label('Toleransi Terlambat')
-                            ->suffix(' menit'),
+                                TextEntry::make('toleransi_terlambat')
+                                    ->label('Toleransi Keterlambatan')
+                                    ->suffix(' menit')
+                                    ->icon('heroicon-o-exclamation-triangle')
+                                    ->badge()
+                                    ->color('warning')
+                                    ->weight(FontWeight::Medium),
+                            ]),
                     ])
-                    ->columns(3),
+                    ->collapsible()
+                    ->compact(),
 
-                Section::make('Status & Waktu')
+                // Status Section dengan Enhanced Badge
+                Section::make('⚡ Status & Riwayat')
+                    ->description('Status aktif dan catatan waktu')
                     ->schema([
-                        TextEntry::make('aktif')
-                            ->label('Status')
-                            ->badge()
-                            ->color(fn(string $state): string => match ($state) {
-                                '1' => 'success',
-                                '0' => 'danger',
-                            })
-                            ->formatStateUsing(fn(string $state): string => $state ? 'Aktif' : 'Tidak Aktif'),
+                        Grid::make(3)
+                            ->schema([
+                                TextEntry::make('aktif')
+                                    ->label('Status Kantor')
+                                    ->badge()
+                                    ->size(TextEntrySize::Large)
+                                    ->weight(FontWeight::Bold)
+                                    ->color(fn(string $state): string => match ($state) {
+                                        '1' => 'success',
+                                        '0' => 'danger',
+                                    })
+                                    ->icon(fn(string $state): string => match ($state) {
+                                        '1' => 'heroicon-o-check-circle',
+                                        '0' => 'heroicon-o-x-circle',
+                                    })
+                                    ->formatStateUsing(fn(string $state): string => $state === '1' ? '✅ Aktif' : '❌ Tidak Aktif'),
 
-                        TextEntry::make('created_at')
-                            ->label('Dibuat')
-                            ->dateTime('d/m/Y H:i'),
+                                TextEntry::make('created_at')
+                                    ->label('Dibuat Pada')
+                                    ->dateTime('d M Y, H:i')
+                                    ->icon('heroicon-o-calendar-days')
+                                    ->color('gray')
+                                    ->tooltip('Tanggal pembuatan record'),
 
-                        TextEntry::make('updated_at')
-                            ->label('Diperbarui')
-                            ->dateTime('d/m/Y H:i'),
+                                TextEntry::make('updated_at')
+                                    ->label('Terakhir Diperbarui')
+                                    ->dateTime('d M Y, H:i')
+                                    ->icon('heroicon-o-arrow-path')
+                                    ->color('gray')
+                                    ->tooltip('Tanggal pembaruan terakhir')
+                                    ->since(),
+                            ]),
                     ])
-                    ->columns(3),
-            ]);
+                    ->collapsible()
+                    ->compact(),
+
+                // Additional Info Section (Optional)
+                Section::make('📊 Informasi Tambahan')
+                    ->description('Data pendukung dan statistik')
+                    ->schema([
+                        Fieldset::make('Koordinat Lengkap')
+                            ->schema([
+                                TextEntry::make('full_coordinates')
+                                    ->label('Koordinat Lengkap')
+                                    ->state(fn($record) => $record->latitude . ', ' . $record->longitude)
+                                    ->copyable()
+                                    ->copyMessage('Koordinat lengkap disalin!')
+                                    ->icon('heroicon-o-map')
+                                    ->badge()
+                                    ->color('primary'),
+                            ]),
+
+                        Fieldset::make('Durasi Kerja')
+                            ->schema([
+                                TextEntry::make('durasi_kerja')
+                                    ->label('Total Jam Kerja')
+                                    ->state(function ($record) {
+                                        $masuk = \Carbon\Carbon::createFromFormat('H:i:s', $record->jam_masuk);
+                                        $pulang = \Carbon\Carbon::createFromFormat('H:i:s', $record->jam_pulang);
+                                        $diff = $pulang->diff($masuk);
+                                        return $diff->format('%h jam %i menit');
+                                    })
+                                    ->icon('heroicon-o-clock')
+                                    ->badge()
+                                    ->color('info'),
+                            ]),
+                    ])
+                    ->collapsed()
+                    ->compact(),
+            ])
+            ->columns(1);
     }
 
 
