@@ -30,6 +30,16 @@ class PengaturanKantorResource extends Resource
 
     protected static ?int $navigationSort = 1;
 
+    public static ?string $recordTitleAttribute = 'nama_kantor';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'nama_kantor',
+            'alamat_kantor',
+        ];
+    }
+
     public static function form(Form $form): Form
     {
         return $form

@@ -4,8 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\MobilResource\Pages;
 use App\Models\Mobil;
-use App\Models\Merek;
-use App\Models\Kategori;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -30,6 +28,13 @@ class MobilResource extends Resource
     protected static ?string $navigationGroup = 'Data Produk';
 
     protected static ?int $navigationSort = 1;
+    protected static ?string $recordTitleAttribute = 'nama';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'slug', 'merek.nama', 'kategori.nama'];
+    }
+
 
     public static function form(Form $form): Form
     {
@@ -483,15 +488,6 @@ class MobilResource extends Resource
             ]);
     }
 
-    public static function getGlobalSearchEloquentQuery(): Builder
-    {
-        return parent::getGlobalSearchEloquentQuery()->with(['merek', 'kategori']);
-    }
-
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['nama', 'slug', 'merek.nama', 'kategori.nama'];
-    }
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {

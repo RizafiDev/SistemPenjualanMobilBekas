@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\KaryawanResource\Pages;
 use App\Models\Karyawan;
-use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -35,7 +34,24 @@ class KaryawanResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Karyawan';
 
+    protected static ?string $navigationGroup = 'Manajemen Pengguna';
+
     protected static ?int $navigationSort = 1;
+
+    public static ?string $recordTitleAttribute = 'nama_lengkap';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'nip',
+            'nik',
+            'nama_lengkap',
+            'email',
+            'no_telepon',
+            'jabatan',
+            'departemen',
+        ];
+    }
 
     public static function form(Form $form): Form
     {

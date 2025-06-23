@@ -4,8 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\JanjiTemuResource\Pages;
 use App\Models\JanjiTemu;
-use App\Models\Karyawan;
-use App\Models\StokMobil;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -16,7 +14,6 @@ use Filament\Infolists\Infolist;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Enums\FiltersLayout;
 
 class JanjiTemuResource extends Resource
 {
@@ -30,9 +27,23 @@ class JanjiTemuResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Janji Temu';
 
-    protected static ?string $navigationGroup = 'Penjualan';
+    protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?int $navigationSort = 2;
+
+    public static ?string $recordTitleAttribute = 'nama_pelanggan';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'nama_pelanggan',
+            'email_pelanggan',
+            'telepon_pelanggan',
+            'alamat_pelanggan',
+            'tujuan',
+            'pesan_tambahan',
+        ];
+    }
 
     public static function form(Form $form): Form
     {

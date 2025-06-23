@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\FotoMobilResource\Pages;
 use App\Models\FotoMobil;
-use App\Models\Mobil;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -25,7 +24,7 @@ class FotoMobilResource extends Resource
 
     protected static ?string $modelLabel = 'Foto Mobil';
 
-    protected static ?string $navigationGroup = 'Manajemen Mobil';
+    protected static ?string $navigationGroup = 'Data Produk';
 
     protected static ?int $navigationSort = 2;
 

@@ -28,6 +28,12 @@ class KategoriResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static ?string $recordTitleAttribute = 'nama';
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'slug', 'deskripsi'];
+    }
+
     public static function form(Form $form): Form
     {
         return $form
@@ -271,14 +277,9 @@ class KategoriResource extends Resource
             ]);
     }
 
-    public static function getGlobalSearchEloquentQuery(): Builder
+    public static function getNavigationBadge(): ?string
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['']);
-    }
-
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['nama', 'slug', 'deskripsi'];
+        return static::getModel()::count();
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array

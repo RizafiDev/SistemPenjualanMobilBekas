@@ -1,4 +1,5 @@
 <?php
+// config/auth.php
 
 return [
 
@@ -40,6 +41,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // Guard untuk karyawan absensi
+        'karyawan' => [
+            'driver' => 'session',
+            'provider' => 'karyawans',
+        ],
     ],
 
     /*
@@ -63,6 +70,12 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        // Provider untuk karyawan
+        'karyawans' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Karyawan::class,
         ],
 
         // 'users' => [
@@ -94,6 +107,14 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        // Password reset untuk karyawan
+        'karyawans' => [
+            'provider' => 'karyawans',
+            'table' => 'password_reset_tokens',
             'expire' => 60,
             'throttle' => 60,
         ],

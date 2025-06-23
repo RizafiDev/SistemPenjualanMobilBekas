@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Filament\Resources\LaporanPenjualanResource\Pages;
+
+use App\Filament\Resources\LaporanPenjualanResource;
+use Filament\Actions;
+use Filament\Resources\Pages\EditRecord;
+
+class EditLaporanPenjualan extends EditRecord
+{
+    protected static string $resource = LaporanPenjualanResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Actions\ViewAction::make(),
+            Actions\DeleteAction::make(),
+        ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return $this->getResource()::getUrl('index');
+    }
+}

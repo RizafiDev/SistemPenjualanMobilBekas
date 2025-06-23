@@ -37,6 +37,20 @@ class PembayaranResource extends Resource
     protected static ?int $navigationSort = 3;
 
     protected static ?string $navigationGroup = 'Transaksi';
+    protected static ?string $recordTitleAttribute = 'no_kwitansi';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'no_kwitansi',
+            'keterangan',
+            'no_referensi',
+            'penjualan.no_faktur',
+            'penjualan.pelanggan.nama_lengkap',
+        ];
+    }
+
+
 
     public static function form(Form $form): Form
     {
@@ -425,16 +439,6 @@ class PembayaranResource extends Resource
         return parent::getGlobalSearchEloquentQuery()->with(['penjualan.pelanggan']);
     }
 
-    public static function getGloballySearchableAttributes(): array
-    {
-        return [
-            'no_kwitansi',
-            'keterangan',
-            'no_referensi',
-            'penjualan.no_faktur',
-            'penjualan.pelanggan.nama_lengkap',
-        ];
-    }
 
     public static function getGlobalSearchResultDetails(Model $record): array
     {

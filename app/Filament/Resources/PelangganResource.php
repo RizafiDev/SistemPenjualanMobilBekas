@@ -15,8 +15,6 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\Filter;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\DatePicker;
 
 class PelangganResource extends Resource
 {
@@ -27,10 +25,25 @@ class PelangganResource extends Resource
     protected static ?string $navigationLabel = 'Pelanggan';
 
     protected static ?string $modelLabel = 'Pelanggan';
+    protected static ?string $navigationGroup = 'Manajemen Pengguna';
 
     protected static ?string $pluralModelLabel = 'Pelanggan';
 
     protected static ?int $navigationSort = 3;
+
+    public static ?string $recordTitleAttribute = 'nama_lengkap';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'nama_lengkap',
+            'nik',
+            'no_telepon',
+            'email',
+            'pekerjaan',
+            'perusahaan',
+        ];
+    }
 
     public static function form(Form $form): Form
     {

@@ -4,7 +4,6 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\VarianResource\Pages;
 use App\Models\Varian;
-use App\Models\Mobil;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -29,9 +28,22 @@ class VarianResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Varian';
 
-    protected static ?string $navigationGroup = 'Manajemen Mobil';
+    protected static ?string $navigationGroup = 'Data Produk';
 
     protected static ?int $navigationSort = 2;
+
+    public static ?string $recordTitleAttribute = 'nama';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'nama',
+            'kode',
+            'mobil.nama',
+            'tipe_mesin',
+            'transmisi',
+        ];
+    }
 
     public static function form(Form $form): Form
     {

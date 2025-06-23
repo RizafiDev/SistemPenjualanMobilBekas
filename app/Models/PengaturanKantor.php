@@ -28,8 +28,9 @@ class PengaturanKantor extends Model
         'latitude' => 'decimal:8',
         'longitude' => 'decimal:8',
         'radius_meter' => 'integer',
-        'jam_masuk' => 'datetime:H:i',
-        'jam_pulang' => 'datetime:H:i',
+        // Perbaikan: gunakan 'datetime' saja, bukan 'datetime:H:i'
+        'jam_masuk' => 'datetime',
+        'jam_pulang' => 'datetime',
         'toleransi_terlambat' => 'integer',
         'aktif' => 'boolean',
         'deleted_at' => 'datetime',

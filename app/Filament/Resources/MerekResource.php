@@ -27,6 +27,11 @@ class MerekResource extends Resource
     protected static ?string $navigationGroup = 'Master Data';
 
     protected static ?int $navigationSort = 1;
+    protected static ?string $recordTitleAttribute = 'nama';
+    public static function getGloballySearchableAttributes(): array
+    {
+        return ['nama', 'slug', 'negara_asal'];
+    }
 
     public static function form(Form $form): Form
     {
@@ -136,7 +141,6 @@ class MerekResource extends Resource
                     ->color('info'),
 
                 Tables\Columns\TextColumn::make('tahun_berdiri')
-                    ->numeric()
                     ->sortable()
                     ->alignCenter(),
 
@@ -260,14 +264,9 @@ class MerekResource extends Resource
             ]);
     }
 
-    public static function getGlobalSearchEloquentQuery(): Builder
+    public static function getNavigationBadge(): ?string
     {
-        return parent::getGlobalSearchEloquentQuery()->with(['']);
-    }
-
-    public static function getGloballySearchableAttributes(): array
-    {
-        return ['nama', 'slug', 'negara_asal'];
+        return static::getModel()::count();
     }
 
     public static function getGlobalSearchResultDetails(Model $record): array

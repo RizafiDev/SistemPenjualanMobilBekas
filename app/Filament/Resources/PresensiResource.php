@@ -5,7 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PresensiResource\Widgets;
 use App\Filament\Resources\PresensiResource\Pages;
 use App\Models\Presensi;
-use App\Models\Karyawan;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -15,9 +14,6 @@ use Filament\Infolists;
 use Filament\Infolists\Infolist;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
-use Filament\Forms\Components\DatePicker;
-use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Actions\BulkAction;
 use Illuminate\Database\Eloquent\Collection;
 use Filament\Notifications\Notification;
@@ -39,6 +35,19 @@ class PresensiResource extends Resource
     protected static ?string $navigationGroup = 'Manajemen Presensi';
 
     protected static ?int $navigationSort = 1;
+
+    public static ?string $recordTitleAttribute = 'karyawan.nama_lengkap';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'karyawan.nama_lengkap',
+            'karyawan.nip',
+            'tanggal',
+            'status',
+            'keterangan',
+        ];
+    }
 
     public static function form(Form $form): Form
     {
@@ -80,14 +89,6 @@ class PresensiResource extends Resource
                         Forms\Components\TimePicker::make('jam_pulang')
                             ->label('Jam Pulang')
                             ->seconds(false)
-                            ->columnSpan(1),
-
-                        Forms\Components\TextInput::make('jam_kerja')
-                            ->label('Jam Kerja')
-                            ->numeric()
-                            ->step(0.01)
-                            ->disabled()
-                            ->dehydrated(false)
                             ->columnSpan(1),
 
                         Forms\Components\TextInput::make('menit_terlambat')
@@ -194,11 +195,6 @@ class PresensiResource extends Resource
                     ->time('H:i')
                     ->sortable()
                     ->placeholder('-'),
-
-                Tables\Columns\TextColumn::make('jam_kerja_formatted')
-                    ->label('Jam Kerja')
-                    ->placeholder('-')
-                    ->alignCenter(),
 
                 Tables\Columns\BadgeColumn::make('status')
                     ->label('Status')
@@ -352,8 +348,6 @@ class PresensiResource extends Resource
                             ->label('Jam Pulang')
                             ->time('H:i')
                             ->placeholder('-'),
-                        Infolists\Components\TextEntry::make('jam_kerja_formatted')
-                            ->label('Jam Kerja'),
                         Infolists\Components\TextEntry::make('keterangan_terlambat')
                             ->label('Keterangan Terlambat')
                             ->placeholder('-'),

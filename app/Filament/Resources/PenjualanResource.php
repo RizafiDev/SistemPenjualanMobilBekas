@@ -5,9 +5,6 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PenjualanResource\Pages;
 use App\Models\Penjualan;
 use App\Models\StokMobil;
-use App\Models\Pelanggan;
-use App\Models\Karyawan;
-use Filament\Actions\ActionGroup;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -18,11 +15,7 @@ use Filament\Infolists\Components;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Support\Enums\FontWeight;
-use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\Actions\Action;
-use Filament\Notifications\Notification;
-use Illuminate\Support\HtmlString;
-use Filament\Support\Colors\Color;
 use App\Filament\Resources\PenjualanResource\RelationManagers\PembayaransRelationManager;
 
 class PenjualanResource extends Resource
@@ -40,6 +33,20 @@ class PenjualanResource extends Resource
     protected static ?string $navigationGroup = 'Transaksi';
 
     protected static ?int $navigationSort = 1;
+
+    public static ?string $recordTitleAttribute = 'no_faktur';
+
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'no_faktur',
+            'pelanggan.nama_lengkap',
+            'stokMobil.mobil.nama',
+            'karyawan.nama_lengkap',
+            'metode_pembayaran',
+            'status',
+        ];
+    }
 
     public static function form(Form $form): Form
     {
