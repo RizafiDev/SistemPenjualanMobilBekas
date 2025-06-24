@@ -495,7 +495,7 @@ class JanjiTemuResource extends Resource
                     ->schema([
                         Infolists\Components\TextEntry::make('tujuan')
                             ->label('Tujuan Janji Temu')
-                            ->icon('heroicon-o-target')
+                            ->icon('heroicon-o-bolt')
                             ->color('primary')
                             ->placeholder('Tidak ada tujuan yang disebutkan'),
 

@@ -11,6 +11,8 @@ class PresensiChartWidget extends ChartWidget
 
     protected static ?int $sort = 2;
 
+    protected int|string|array $columnSpan = 'full';
+
     protected function getData(): array
     {
         $data = collect(range(6, 0))->map(function ($daysAgo) {
