@@ -27,7 +27,21 @@ class PaginationHandler extends Handlers
 
         $query = QueryBuilder::for($query)
             ->allowedFields($this->getAllowedFields() ?? [])
-            ->allowedSorts($this->getAllowedSorts() ?? [])
+            ->allowedSorts([
+                'id',
+                'mobil_id',
+                'path_file',
+                'jenis_media',
+                'jenis_gambar',
+                'urutan_tampil',
+                'created_at',
+                'updated_at',
+                '-id',
+                '-mobil_id',
+                '-urutan_tampil',
+                '-created_at',
+                '-updated_at'
+            ])
             ->allowedFilters($this->getAllowedFilters() ?? [])
             ->allowedIncludes($this->getAllowedIncludes() ?? [])
             ->paginate(request()->query('per_page'))

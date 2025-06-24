@@ -25,7 +25,16 @@ class PaginationHandler extends Handlers
 
         $query = QueryBuilder::for($query)
             ->allowedFields($this->getAllowedFields() ?? [])
-            ->allowedSorts($this->getAllowedSorts() ?? [])
+            ->allowedSorts([
+                'id',
+                'nama',  // ✅ Fixed - using correct column name
+                'created_at',
+                'updated_at',
+                '-id',
+                '-nama', // ✅ Fixed - using correct column name
+                '-created_at',
+                '-updated_at'
+            ])
             ->allowedFilters($this->getAllowedFilters() ?? [])
             ->allowedIncludes($this->getAllowedIncludes() ?? [])
             ->paginate(request()->query('per_page'))

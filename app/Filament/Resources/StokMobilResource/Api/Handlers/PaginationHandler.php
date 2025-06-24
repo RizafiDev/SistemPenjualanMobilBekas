@@ -23,14 +23,91 @@ class PaginationHandler extends Handlers
     {
         $query = static::getEloquentQuery();
 
+        // Add relationships for filtering and display  
+        $query = $query->with(['mobil.merek', 'mobil.kategori', 'mobil.fotoMobils', 'varian']);
+
         $query = QueryBuilder::for($query)
             ->allowedFields($this->getAllowedFields() ?? [])
-            ->allowedSorts($this->getAllowedSorts() ?? [])
-            ->allowedFilters($this->getAllowedFilters() ?? [])
-            ->allowedIncludes($this->getAllowedIncludes() ?? [])
-            ->paginate(request()->query('per_page'))
+            ->allowedSorts([
+                'id',
+                'mobil_id',
+                'varian_id',
+                'warna',
+                'tahun',
+                'kilometer',
+                'kondisi',
+                'status',
+                'harga_beli',
+                'harga_jual',
+                'tanggal_masuk',
+                'tanggal_keluar',
+                'created_at',
+                'updated_at',
+                '-id',
+                '-mobil_id',
+                '-varian_id',
+                '-tahun',
+                '-kilometer',
+                '-harga_beli',
+                '-harga_jual',
+                '-tanggal_masuk',
+                '-tanggal_keluar',
+                '-created_at',
+                '-updated_at'
+            ])
+            ->allowedFilters([
+                'mobil_id',
+                'varian_id',
+                'warna',
+                'tahun',
+                'kilometer',
+                'kondisi',
+                'status',
+                'harga_beli',
+                'harga_jual',
+                'tanggal_masuk',
+                'tanggal_keluar'
+            ])
+            ->allowedIncludes($this->getAllowedIncludes() ?? []);
+
+        // Handle custom filtering
+        if (request()->has('merek_id')) {
+            $query->whereHas('mobil', function ($q) {
+                $q->where('merek_id', request('merek_id'));
+            });
+        }
+
+        if (request()->has('kategori_id')) {
+            $query->whereHas('mobil', function ($q) {
+                $q->where('kategori_id', request('kategori_id'));
+            });
+        }
+
+        if (request()->has('search')) {
+            $search = request('search');
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('mobil', function ($mq) use ($search) {
+                    $mq->where('nama', 'like', "%{$search}%")
+                        ->orWhere('deskripsi', 'like', "%{$search}%")
+                        ->orWhereHas('merek', function ($mrq) use ($search) {
+                            $mrq->where('nama', 'like', "%{$search}%");
+                        });
+                })
+                    ->orWhere('warna', 'like', "%{$search}%");
+            });
+        }
+
+        if (request()->has('min_harga_jual')) {
+            $query->where('harga_jual', '>=', request('min_harga_jual'));
+        }
+
+        if (request()->has('max_harga_jual')) {
+            $query->where('harga_jual', '<=', request('max_harga_jual'));
+        }
+
+        $result = $query->paginate(request()->query('per_page', 15))
             ->appends(request()->query());
 
-        return StokMobilTransformer::collection($query);
+        return StokMobilTransformer::collection($result);
     }
 }

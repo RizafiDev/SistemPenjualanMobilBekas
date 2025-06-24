@@ -11,8 +11,9 @@ use App\Filament\Resources\MobilResource\Api\Transformers\MobilTransformer;
 
 class DetailHandler extends Handlers
 {
-    public static string | null $uri = '/{id}';
-    public static string | null $resource = MobilResource::class;
+    public static string|null $uri = '/{id}';
+    public static string|null $resource = MobilResource::class;
+    public static bool $public = true;
 
 
     /**
@@ -24,7 +25,7 @@ class DetailHandler extends Handlers
     public function handler(Request $request)
     {
         $id = $request->route('id');
-        
+
         $query = static::getEloquentQuery();
 
         $query = QueryBuilder::for(
@@ -32,7 +33,8 @@ class DetailHandler extends Handlers
         )
             ->first();
 
-        if (!$query) return static::sendNotFoundResponse();
+        if (!$query)
+            return static::sendNotFoundResponse();
 
         return new MobilTransformer($query);
     }
