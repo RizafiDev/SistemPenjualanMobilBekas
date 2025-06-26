@@ -23,8 +23,17 @@ class PaginationHandler extends Handlers
     {
         $query = static::getEloquentQuery();
 
-        // Add relationships for filtering and display  
-        $query = $query->with(['mobil.merek', 'mobil.kategori', 'mobil.fotoMobils', 'varian']);
+        // ✅ For catalog, still filter only available items
+        $query = $query->where('status', 'tersedia');
+
+        // ✅ Load all necessary relationships including varian and service history
+        $query = $query->with([
+            'mobil.merek',
+            'mobil.kategori',
+            'mobil.fotoMobils',
+            'varian.mobil',  // ✅ Include varian relation with mobil
+            'riwayatServis'   // ✅ Include service history
+        ]);
 
         $query = QueryBuilder::for($query)
             ->allowedFields($this->getAllowedFields() ?? [])
@@ -36,11 +45,9 @@ class PaginationHandler extends Handlers
                 'tahun',
                 'kilometer',
                 'kondisi',
-                'status',
                 'harga_beli',
                 'harga_jual',
                 'tanggal_masuk',
-                'tanggal_keluar',
                 'created_at',
                 'updated_at',
                 '-id',
@@ -51,7 +58,6 @@ class PaginationHandler extends Handlers
                 '-harga_beli',
                 '-harga_jual',
                 '-tanggal_masuk',
-                '-tanggal_keluar',
                 '-created_at',
                 '-updated_at'
             ])
@@ -62,11 +68,9 @@ class PaginationHandler extends Handlers
                 'tahun',
                 'kilometer',
                 'kondisi',
-                'status',
                 'harga_beli',
                 'harga_jual',
-                'tanggal_masuk',
-                'tanggal_keluar'
+                'tanggal_masuk'
             ])
             ->allowedIncludes($this->getAllowedIncludes() ?? []);
 

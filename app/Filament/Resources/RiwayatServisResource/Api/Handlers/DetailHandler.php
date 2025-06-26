@@ -11,9 +11,9 @@ use App\Filament\Resources\RiwayatServisResource\Api\Transformers\RiwayatServisT
 
 class DetailHandler extends Handlers
 {
-    public static string | null $uri = '/{id}';
-    public static string | null $resource = RiwayatServisResource::class;
-
+    public static string|null $uri = '/{id}';
+    public static string|null $resource = RiwayatServisResource::class;
+    public static bool $public = true;
 
     /**
      * Show RiwayatServis
@@ -24,7 +24,7 @@ class DetailHandler extends Handlers
     public function handler(Request $request)
     {
         $id = $request->route('id');
-        
+
         $query = static::getEloquentQuery();
 
         $query = QueryBuilder::for(
@@ -32,7 +32,8 @@ class DetailHandler extends Handlers
         )
             ->first();
 
-        if (!$query) return static::sendNotFoundResponse();
+        if (!$query)
+            return new RiwayatServisTransformer(null);
 
         return new RiwayatServisTransformer($query);
     }

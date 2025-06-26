@@ -26,15 +26,18 @@ class CreateJanjiTemuRequest extends FormRequest
 			'nama_pelanggan' => 'required|string|max:255',
 			'email_pelanggan' => 'required|email',
 			'telepon_pelanggan' => 'required|string|max:20',
-			'alamat_pelanggan' => 'required|string|max:500',
+			'alamat_pelanggan' => 'nullable|string|max:500', // Made optional
 
 			// Data janji temu - yang diisi user
-			'stok_mobil_id' => 'required|exists:stok_mobils,id',
+			'stok_mobil_id' => 'nullable|exists:stok_mobils,id', // Made optional for general consultation
 			'waktu_mulai' => 'required|date|after:now',
-			'jenis' => 'required|in:test_drive,konsultasi,service,lainnya',
-			'tujuan' => 'required|string|max:500',
+			'waktu_selesai' => 'required|date|after:waktu_mulai', // Added validation for end time
+			'jenis' => 'required|in:test_drive,konsultasi,negosiasi',
+			'tujuan' => 'nullable|string|max:500',
 			'pesan_tambahan' => 'nullable|string|max:1000',
 			'waktu_alternatif' => 'nullable|date|after:now',
+			'metode' => 'required|in:online,offline',
+			'lokasi' => 'required|in:showroom,rumah_pelanggan',
 
 			// Field yang auto-generated atau default
 			// 'karyawan_id' => 'nullable', // akan diassign admin

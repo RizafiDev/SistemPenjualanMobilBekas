@@ -83,12 +83,12 @@ class StokMobil extends Model
     // Accessors
     public function getFormattedHargaBeliAttribute(): string
     {
-        return 'Rp ' . number_format($this->harga_beli, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->harga_beli, 0, ',', '.');
     }
 
     public function getFormattedHargaJualAttribute(): string
     {
-        return 'Rp ' . number_format($this->harga_jual, 0, ',', '.');
+        return 'Rp ' . number_format((float) $this->harga_jual, 0, ',', '.');
     }
 
     public function getFormattedLabaKotorAttribute(): string
@@ -224,7 +224,7 @@ class StokMobil extends Model
     // ACCESSOR UNTUK DISPLAY
 
     // Nama lengkap mobil untuk display
-    public function getNamaLengkapPenjualanAttribute(): string
+    public function getNamaLengkapAttribute(): string
     {
         $mobil = $this->mobil;
         $varian = $this->varian;
@@ -233,11 +233,43 @@ class StokMobil extends Model
         $merek = $mobil?->merek?->nama ?? '';
         $model = $mobil?->nama ?? '';
         $varianNama = $varian?->nama ?? '';
-        $tahun = $this->tahun ?? '';
-        $warna = $this->warna ?? '';
 
-        // Gabungkan tanpa tanda -
-        return trim("{$merek} {$varianNama} {$model} {$tahun} {$warna}");
+        // Gabungkan dengan format yang konsisten
+        return trim("{$merek} {$model} {$varianNama}");
+    }
+
+    // Get first available foto kondisi for catalog display
+    public function getFotoUrlAttribute(): ?string
+    {
+        if (empty($this->foto_kondisi)) {
+            return null;
+        }
+
+        $fotoKondisi = is_array($this->foto_kondisi) ? $this->foto_kondisi : json_decode((string) $this->foto_kondisi, true);
+
+        if (empty($fotoKondisi) || !is_array($fotoKondisi)) {
+            return null;
+        }
+
+        // Get first available photo from foto_kondisi
+        $firstPhoto = reset($fotoKondisi);
+
+        if (is_string($firstPhoto) && !empty($firstPhoto)) {
+            // If it's already a full URL, return as is
+            if (str_starts_with($firstPhoto, 'http://') || str_starts_with($firstPhoto, 'https://')) {
+                return $firstPhoto;
+            }
+
+            // If it starts with storage/, prefix with the storage URL
+            if (str_starts_with($firstPhoto, 'storage/')) {
+                return url($firstPhoto);
+            }
+
+            // Otherwise, assume it's a path relative to storage/
+            return url('storage/' . $firstPhoto);
+        }
+
+        return null;
     }
 
     // Status availability untuk janji temu

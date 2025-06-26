@@ -32,10 +32,20 @@ class CreateHandler extends Handlers
     {
         $model = new (static::getModel());
 
-        $model->fill($request->all());
+        $data = $request->all();
 
+        // Set default values for auto-generated fields
+        $data['status'] = 'pending';
+        $data['tanggal_request'] = now();
+
+        // If no specific stock is selected, this is a general consultation
+        if (empty($data['stok_mobil_id'])) {
+            $data['stok_mobil_id'] = null;
+        }
+
+        $model->fill($data);
         $model->save();
 
-        return static::sendSuccessResponse($model, "Successfully Create Resource");
+        return static::sendSuccessResponse($model, "Janji temu berhasil dibuat");
     }
 }

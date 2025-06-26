@@ -8,14 +8,14 @@ use Illuminate\Routing\Router;
 
 class StokMobilApiService extends ApiService
 {
-    protected static string | null $resource = StokMobilResource::class;
+    protected static string|null $resource = StokMobilResource::class;
 
-    public static function handlers() : array
+    public static function handlers(): array
     {
         return [
-            Handlers\CreateHandler::class,
-            Handlers\UpdateHandler::class,
-            Handlers\DeleteHandler::class,
+                // Handlers\CreateHandler::class,
+                // Handlers\UpdateHandler::class,
+                // Handlers\DeleteHandler::class,
             Handlers\PaginationHandler::class,
             Handlers\DetailHandler::class
         ];
