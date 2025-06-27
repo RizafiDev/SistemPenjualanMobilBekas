@@ -48,11 +48,11 @@
                 @csrf
                 <div>
                     <label for="nip" class="block text-sm font-semibold text-slate-700 mb-1">
-                        <i class="fas fa-id-badge mr-2 text-slate-400"></i>NIP
+                        <i class="fas fa-id-badge mr-2 text-slate-400"></i>ID Karyawan
                     </label>
                     <input type="text" id="nip" name="nip" value="{{ old('nip') }}"
                         class="w-full outline-0 px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition duration-150 ease-in-out placeholder-slate-400 text-slate-700 bg-slate-50 shadow-sm"
-                        placeholder="Masukkan NIP Anda" required autofocus>
+                        placeholder="Masukkan ID Karyawan" required autofocus>
                 </div>
 
                 <div>

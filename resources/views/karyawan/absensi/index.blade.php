@@ -359,7 +359,7 @@
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-slate-800">Halo, {{ $karyawan->nama_lengkap }} 👋
                     </h1>
-                    <p class="text-slate-500 text-sm">NIP: {{ $karyawan->nip ?? '-' }}</p>
+                    <p class="text-slate-500 text-sm">ID Karyawan : {{ $karyawan->nip ?? '-' }}</p>
                 </div>
                 <div class="flex items-center gap-3 bg-white bg-opacity-70 px-4 py-2 rounded-lg shadow-sm">
                     <div class="text-blue-500">
