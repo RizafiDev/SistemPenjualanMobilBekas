@@ -110,9 +110,11 @@ export default function CarDetailPage({ carId }: CarDetailPageProps) {
     };
 
     const handleAppointment = () => {
-        // Navigate to appointment page with car data
-        const url = `/janji-temu?mobil=${carId}&varian=${selectedVariant}`;
-        window.open(url, "_blank");
+        // Scroll to appointment form on same page
+        const appointmentSection = document.getElementById("appointment-form");
+        if (appointmentSection) {
+            appointmentSection.scrollIntoView({ behavior: "smooth" });
+        }
     };
 
     const handleContact = () => {
