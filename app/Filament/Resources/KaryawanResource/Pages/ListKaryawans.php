@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\KaryawanResource\Pages;
 
 use App\Filament\Resources\KaryawanResource;
+use App\Filament\Resources\KaryawanResource\Widgets\KaryawanOverviewStats;
 use Filament\Actions;
 use Filament\Resources\Pages\ListRecords;
 use Filament\Resources\Components\Tab;
@@ -16,6 +17,13 @@ class ListKaryawans extends ListRecords
     {
         return [
             Actions\CreateAction::make(),
+        ];
+    }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            KaryawanOverviewStats::class,
         ];
     }
 

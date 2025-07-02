@@ -23,6 +23,11 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\KeyValue;
+use Filament\Infolists\Infolist;
+use Filament\Infolists\Components;
+use Filament\Infolists\Components\Placeholder;
+use App\Models\PengajuanCuti;
+use App\Models\Presensi;
 
 class KaryawanResource extends Resource
 {
@@ -372,10 +377,6 @@ class KaryawanResource extends Resource
             ->defaultSort('created_at', 'desc');
     }
 
-    public static function getNavigationBadge(): ?string
-    {
-        return static::getModel()::count();
-    }
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
@@ -393,4 +394,171 @@ class KaryawanResource extends Resource
             'edit' => Pages\EditKaryawan::route('/{record}/edit'),
         ];
     }
+
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Components\Section::make('👤 Informasi Personal')
+                    ->schema([
+                        Components\Grid::make(3)
+                            ->schema([
+                                Components\ImageEntry::make('foto')
+                                    ->label('Foto')
+                                    ->circular()
+                                    ->size(150)
+                                    ->defaultImageUrl(url('/images/default-avatar.png')),
+
+                                Components\Grid::make(2)
+                                    ->schema([
+                                        Components\TextEntry::make('nip')
+                                            ->label('NIP')
+                                            ->copyable()
+                                            ->badge()
+                                            ->color('primary'),
+
+                                        Components\TextEntry::make('nik')
+                                            ->label('NIK')
+                                            ->copyable()
+                                            ->badge()
+                                            ->color('gray'),
+
+                                        Components\TextEntry::make('nama_lengkap')
+                                            ->label('Nama Lengkap')
+                                            ->weight('bold')
+                                            ->size('lg'),
+
+                                        Components\TextEntry::make('email')
+                                            ->label('Email')
+                                            ->copyable()
+                                            ->icon('heroicon-m-envelope'),
+
+                                        Components\TextEntry::make('no_telepon')
+                                            ->label('No. Telepon')
+                                            ->copyable()
+                                            ->icon('heroicon-m-phone'),
+
+                                        Components\TextEntry::make('jenis_kelamin')
+                                            ->label('Jenis Kelamin')
+                                            ->badge()
+                                            ->color(fn($state) => $state === 'L' ? 'blue' : 'pink')
+                                            ->formatStateUsing(fn($state) => $state === 'L' ? 'Laki-laki' : 'Perempuan'),
+                                    ])
+                                    ->columnSpan(2),
+                            ]),
+
+                        Components\TextEntry::make('tanggal_lahir')
+                            ->label('Tanggal Lahir')
+                            ->date('d F Y')
+                            ->icon('heroicon-m-cake'),
+
+                        Components\TextEntry::make('alamat')
+                            ->label('Alamat')
+                            ->icon('heroicon-m-map-pin')
+                            ->columnSpanFull(),
+                    ]),
+
+                Components\Section::make('💼 Informasi Pekerjaan')
+                    ->schema([
+                        Components\Grid::make(3)
+                            ->schema([
+                                Components\TextEntry::make('jabatan')
+                                    ->label('Jabatan')
+                                    ->badge()
+                                    ->color('success'),
+
+                                Components\TextEntry::make('departemen')
+                                    ->label('Departemen')
+                                    ->badge()
+                                    ->color('info'),
+
+                                Components\TextEntry::make('status')
+                                    ->label('Status Karyawan')
+                                    ->badge()
+                                    ->color(fn($state) => match ($state) {
+                                        'tetap' => 'success',
+                                        'kontrak' => 'warning',
+                                        'magang' => 'info',
+                                        default => 'gray'
+                                    }),
+
+                                Components\TextEntry::make('aktif')
+                                    ->label('Status Aktif')
+                                    ->badge()
+                                    ->color(fn($state) => $state === 'aktif' ? 'success' : 'danger')
+                                    ->formatStateUsing(fn($state) => $state === 'aktif' ? 'Aktif' : 'Non-Aktif'),
+
+                                Components\TextEntry::make('gaji_pokok')
+                                    ->label('Gaji Pokok')
+                                    ->money('IDR')
+                                    ->color('warning'),
+
+                                Components\TextEntry::make('tanggal_masuk')
+                                    ->label('Tanggal Masuk')
+                                    ->date('d F Y')
+                                    ->icon('heroicon-m-calendar'),
+                            ]),
+                    ]),
+
+                Components\Section::make('📊 Ringkasan Absensi')
+                    ->description('Statistik absensi karyawan dalam periode tertentu')
+                    ->schema([
+                        Placeholder::make('ringkasan_absensi')
+                            ->label('')
+                            ->content(function ($record) {
+                                $bulanIni = \Carbon\Carbon::now();
+                                $startOfMonth = $bulanIni->copy()->startOfMonth();
+                                $endOfMonth = $bulanIni->copy()->endOfMonth();
+
+                                $hadir = Presensi::where('karyawan_id', $record->id)
+                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                                    ->whereIn('status', [Presensi::STATUS_HADIR, Presensi::STATUS_TERLAMBAT])
+                                    ->count();
+
+                                $sakit = Presensi::where('karyawan_id', $record->id)
+                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                                    ->where('status', Presensi::STATUS_SAKIT)
+                                    ->count();
+
+                                $izin = Presensi::where('karyawan_id', $record->id)
+                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
+                                    ->where('status', Presensi::STATUS_IZIN)
+                                    ->count();
+
+                                $cuti = PengajuanCuti::where('karyawan_id', $record->id)
+                                    ->where('status', PengajuanCuti::STATUS_DISETUJUI)
+                                    ->whereBetween('tanggal_mulai', [$startOfMonth, $endOfMonth])
+                                    ->sum('jumlah_hari');
+
+                                return new \Illuminate\Support\HtmlString("
+                                    <div class='grid grid-cols-4 gap-4'>
+                                        <div class='text-center p-3 bg-green-50 rounded-lg'>
+                                            <div class='text-2xl font-bold text-green-600'>{$hadir}</div>
+                                            <div class='text-sm text-green-500'>Hadir Bulan Ini</div>
+                                        </div>
+                                        <div class='text-center p-3 bg-yellow-50 rounded-lg'>
+                                            <div class='text-2xl font-bold text-yellow-600'>{$sakit}</div>
+                                            <div class='text-sm text-yellow-500'>Sakit Bulan Ini</div>
+                                        </div>
+                                        <div class='text-center p-3 bg-gray-50 rounded-lg'>
+                                            <div class='text-2xl font-bold text-gray-600'>{$izin}</div>
+                                            <div class='text-sm text-gray-500'>Izin Bulan Ini</div>
+                                        </div>
+                                        <div class='text-center p-3 bg-blue-50 rounded-lg'>
+                                            <div class='text-2xl font-bold text-blue-600'>{$cuti}</div>
+                                            <div class='text-sm text-blue-500'>Hari Cuti Bulan Ini</div>
+                                        </div>
+                                    </div>
+                                ");
+                            }),
+                    ])
+                    ->collapsible(),
+            ]);
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        return static::getModel()::count();
+    }
+
 }

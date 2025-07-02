@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\KaryawanResource\Pages;
 
 use App\Filament\Resources\KaryawanResource;
+use App\Filament\Resources\KaryawanResource\Widgets\KaryawanAbsensiStats;
+use App\Filament\Resources\KaryawanResource\Widgets\KaryawanAbsensiTable;
+use App\Filament\Resources\KaryawanResource\Widgets\KaryawanCutiTable;
 use Filament\Actions;
 use Filament\Resources\Pages\ViewRecord;
 use Filament\Infolists\Infolist;
@@ -22,10 +25,39 @@ class ViewKaryawan extends ViewRecord
         return [
             Actions\EditAction::make(),
             Actions\DeleteAction::make(),
-            Actions\RestoreAction::make(),
-            Actions\ForceDeleteAction::make(),
         ];
     }
+
+    protected function getHeaderWidgets(): array
+    {
+        return [
+            KaryawanAbsensiStats::class,
+        ];
+    }
+
+    protected function getFooterWidgets(): array
+    {
+        return [
+            KaryawanAbsensiTable::class,
+            KaryawanCutiTable::class,
+        ];
+    }
+
+    // Untuk pass record ke widgets
+    protected function getHeaderWidgetsData(): array
+    {
+        return [
+            'record' => $this->record,
+        ];
+    }
+
+    protected function getFooterWidgetsData(): array
+    {
+        return [
+            'record' => $this->record,
+        ];
+    }
+
     public function infolist(Infolist $infolist): Infolist
     {
         return $infolist
