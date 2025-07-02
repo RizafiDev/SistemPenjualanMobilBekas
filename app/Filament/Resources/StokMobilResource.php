@@ -90,6 +90,12 @@ class StokMobilResource extends Resource
                             ->required()
                             ->unique(ignoreRecord: true)
                             ->maxLength(255),
+
+                        Forms\Components\TextInput::make('no_polisi')
+                            ->label('No. Polisi')
+                            ->maxLength(15)
+                            ->placeholder('Contoh: B 1234 XYZ')
+                            ->helperText('Opsional - dapat diisi nanti jika belum ada'),
                     ])
                     ->columns(2),
 
@@ -286,6 +292,13 @@ class StokMobilResource extends Resource
                 Tables\Columns\TextColumn::make('no_rangka')
                     ->searchable()
                     ->toggleable(),
+
+                Tables\Columns\TextColumn::make('no_polisi')
+                    ->label('No. Polisi')
+                    ->searchable()
+                    ->placeholder('Belum ada')
+                    ->badge()
+                    ->color(fn($state) => $state ? 'success' : 'gray'),
 
                 Tables\Columns\TextColumn::make('tahun')
                     ->sortable(),

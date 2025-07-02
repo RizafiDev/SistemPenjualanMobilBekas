@@ -6,28 +6,29 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateStokMobilRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return true;
-    }
+	/**
+	 * Determine if the user is authorized to make this request.
+	 */
+	public function authorize(): bool
+	{
+		return true;
+	}
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
-    public function rules(): array
-    {
-        return [
-			'mobil_id' => 'required',
-			'varian_id' => 'required',
-			'warna' => 'required',
-			'no_rangka' => 'required',
-			'no_mesin' => 'required',
-			'tahun' => 'required',
+	/**
+	 * Get the validation rules that apply to the request.
+	 *
+	 * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+	 */
+	public function rules(): array
+	{
+		return [
+			'mobil_id' => 'required|exists:mobils,id',
+			'varian_id' => 'nullable|exists:varians,id',
+			'warna' => 'required|string|max:255',
+			'no_rangka' => 'required|string|max:255|unique:stok_mobils,no_rangka,' . $this->route('stokMobil'),
+			'no_mesin' => 'required|string|max:255|unique:stok_mobils,no_mesin,' . $this->route('stokMobil'),
+			'no_polisi' => 'nullable|string|max:15|unique:stok_mobils,no_polisi,' . $this->route('stokMobil'),
+			'tahun' => 'required|integer|min:1900|max:' . date('Y'),
 			'kilometer' => 'required',
 			'kondisi' => 'required',
 			'status' => 'required',
@@ -45,5 +46,5 @@ class UpdateStokMobilRequest extends FormRequest
 			'kondisi_fitur' => 'required',
 			'deleted_at' => 'required'
 		];
-    }
+	}
 }

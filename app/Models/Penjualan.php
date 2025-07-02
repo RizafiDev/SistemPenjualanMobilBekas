@@ -100,77 +100,15 @@ class Penjualan extends Model
         return $this->hasMany(Pembayaran::class);
     }
 
-    // Accessors
-    public function getFormattedHargaJualAttribute(): string
-    {
-        return 'Rp ' . number_format($this->harga_jual, 0, ',', '.');
-    }
-
-    public function getFormattedDiskonAttribute(): string
-    {
-        return 'Rp ' . number_format($this->diskon, 0, ',', '.');
-    }
-
-    public function getFormattedPpnAttribute(): string
-    {
-        return 'Rp ' . number_format($this->ppn, 0, ',', '.');
-    }
-
-    public function getFormattedBiayaTambahanAttribute(): string
-    {
-        return 'Rp ' . number_format($this->biaya_tambahan, 0, ',', '.');
-    }
-
-    public function getFormattedTotalAttribute(): string
-    {
-        return 'Rp ' . number_format($this->total, 0, ',', '.');
-    }
-
-    public function getFormattedUangMukaAttribute(): string
-    {
-        return $this->uang_muka ? 'Rp ' . number_format($this->uang_muka, 0, ',', '.') : '-';
-    }
-
-    public function getFormattedCicilanBulananAttribute(): string
-    {
-        return $this->cicilan_bulanan ? 'Rp ' . number_format($this->cicilan_bulanan, 0, ',', '.') : '-';
-    }
-
-    public function getMetodePembayaranLabelAttribute(): string
-    {
-        return self::METODE_PEMBAYARAN[$this->metode_pembayaran] ?? '-';
-    }
-
-    public function getStatusLabelAttribute(): string
-    {
-        return self::STATUS[$this->status] ?? '-';
-    }
-
-    public function getStatusBadgeColorAttribute(): string
-    {
-        return match ($this->status) {
-            'draft' => 'gray',
-            'booking' => 'warning',
-            'lunas' => 'success',
-            'kredit' => 'info',
-            'batal' => 'danger',
-            default => 'gray',
-        };
-    }
-
-    public function getLeasingBankLabelAttribute(): string
-    {
-        return $this->leasing_bank ? (self::LEASING_BANKS[$this->leasing_bank] ?? $this->leasing_bank) : '-';
-    }
-
+    // Accessors - Perbaiki accessor
     public function getTotalPembayaranAttribute(): float
     {
-        return $this->pembayarans()->sum('jumlah');
+        return (float) $this->pembayarans()->sum('jumlah');
     }
 
     public function getSisaPembayaranAttribute(): float
     {
-        return $this->total - $this->total_pembayaran;
+        return (float) ($this->total - $this->total_pembayaran);
     }
 
     public function getPersentaseProgressPembayaranAttribute(): float
@@ -178,96 +116,10 @@ class Penjualan extends Model
         if ($this->total == 0) {
             return 0;
         }
-
         return ($this->total_pembayaran / $this->total) * 100;
     }
 
-    // Mutators
-    public function setNoFakturAttribute($value)
-    {
-        if (empty($value)) {
-            $this->attributes['no_faktur'] = $this->generateNoFaktur();
-        } else {
-            $this->attributes['no_faktur'] = $value;
-        }
-    }
-
-    // Methods
-    public function generateNoFaktur(): string
-    {
-        $date = Carbon::now();
-        $prefix = 'PJ';
-        $yearMonth = $date->format('Ym');
-
-        $lastPenjualan = self::where('no_faktur', 'like', $prefix . $yearMonth . '%')
-            ->orderBy('no_faktur', 'desc')
-            ->first();
-
-        if ($lastPenjualan) {
-            $lastNumber = (int) substr($lastPenjualan->no_faktur, -4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
-        }
-
-        return $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-    }
-
-    public function calculateTotal(): void
-    {
-        $subtotal = $this->harga_jual - $this->diskon;
-        $this->total = $subtotal + $this->ppn + $this->biaya_tambahan;
-    }
-
-    public function calculatePpn(float $rate = 0.11): void
-    {
-        $subtotal = $this->harga_jual - $this->diskon;
-        $this->ppn = $subtotal * $rate;
-    }
-
-    public function isKredit(): bool
-    {
-        return in_array($this->metode_pembayaran, ['kredit', 'leasing']);
-    }
-
-    public function hasTradeIn(): bool
-    {
-        return !empty($this->trade_in);
-    }
-
-    public function getTradeInValue(): float
-    {
-        if (!$this->hasTradeIn()) {
-            return 0;
-        }
-
-        return $this->trade_in['nilai_trade_in'] ?? 0;
-    }
-
-    public function getSisaBayar(): float
-    {
-        if (!$this->isKredit()) {
-            return $this->sisa_pembayaran;
-        }
-
-        return $this->total - ($this->uang_muka ?? 0);
-    }
-
-    public function getLabaKotor(): float
-    {
-        $hargaBeli = $this->stokMobil->harga_beli ?? 0;
-        return $this->harga_jual - $hargaBeli;
-    }
-
-    public function getPersentaseDiskon(): float
-    {
-        if ($this->harga_jual == 0) {
-            return 0;
-        }
-
-        return ($this->diskon / $this->harga_jual) * 100;
-    }
-
+    // Methods - Perbaiki method yang error
     public function isPaidOff(): bool
     {
         return $this->total_pembayaran >= $this->total;
@@ -278,18 +130,41 @@ class Penjualan extends Model
         return $this->total_pembayaran > 0 && $this->total_pembayaran < $this->total;
     }
 
-    public function getLastPaymentDate(): ?Carbon
+    public function getSisaBayar(): float
     {
-        $lastPayment = $this->pembayarans()
-            ->orderBy('tanggal_bayar', 'desc')
-            ->first();
-
-        return $lastPayment ? $lastPayment->tanggal_bayar : null;
+        if ($this->isKredit()) {
+            return (float) ($this->total - ($this->uang_muka ?? 0));
+        }
+        return $this->sisa_pembayaran;
     }
 
-    public function getPembayaranByJenis(string $jenis)
+    public function getLabaKotor(): float
     {
-        return $this->pembayarans()->where('jenis', $jenis)->get();
+        $hargaBeli = $this->stokMobil->harga_beli ?? 0;
+        return (float) ($this->harga_jual - $hargaBeli);
+    }
+
+    // Perbaiki scope yang error
+    public function scopePaidOff($query)
+    {
+        return $query->whereExists(function ($subquery) {
+            $subquery->selectRaw('1')
+                ->from('pembayarans')
+                ->whereColumn('pembayarans.penjualan_id', 'penjualans.id')
+                ->groupBy('penjualan_id')
+                ->havingRaw('SUM(jumlah) >= penjualans.total');
+        });
+    }
+
+    public function scopePartialPayment($query)
+    {
+        return $query->whereExists(function ($subquery) {
+            $subquery->selectRaw('1')
+                ->from('pembayarans')
+                ->whereColumn('pembayarans.penjualan_id', 'penjualans.id')
+                ->groupBy('penjualan_id')
+                ->havingRaw('SUM(jumlah) > 0 AND SUM(jumlah) < penjualans.total');
+        });
     }
 
     // Scopes
@@ -349,38 +224,6 @@ class Penjualan extends Model
         ]);
     }
 
-    public function scopePaidOff($query)
-    {
-        return $query->whereHas('pembayarans', function ($q) {
-            $q->selectRaw('penjualan_id, SUM(jumlah) as total_bayar')
-                ->groupBy('penjualan_id')
-                ->havingRaw('total_bayar >= (SELECT total FROM penjualans WHERE id = penjualan_id)');
-        });
-    }
-
-    public function scopePartialPayment($query)
-    {
-        return $query->whereHas('pembayarans', function ($q) {
-            $q->selectRaw('penjualan_id, SUM(jumlah) as total_bayar')
-                ->groupBy('penjualan_id')
-                ->havingRaw('total_bayar > 0 AND total_bayar < (SELECT total FROM penjualans WHERE id = penjualan_id)');
-        });
-    }
-
-    public function scopeSearch($query, $search)
-    {
-        return $query->where(function ($q) use ($search) {
-            $q->where('no_faktur', 'like', "%{$search}%")
-                ->orWhereHas('pelanggan', function ($query) use ($search) {
-                    $query->where('nama_lengkap', 'like', "%{$search}%");
-                })
-                ->orWhereHas('stokMobil.mobil', function ($query) use ($search) {
-                    $query->where('merk', 'like', "%{$search}%")
-                        ->orWhere('model', 'like', "%{$search}%");
-                });
-        });
-    }
-
     // Event handlers
     protected static function boot()
     {
@@ -423,5 +266,205 @@ class Penjualan extends Model
                 $stokMobil->update(['status' => 'tersedia']);
                 break;
         }
+    }
+
+    // Tambahkan method ini ke model Penjualan
+    public function isKredit(): bool
+    {
+        return $this->metode_pembayaran === 'kredit';
+    }
+
+    public function isLeasing(): bool
+    {
+        return $this->metode_pembayaran === 'leasing';
+    }
+
+    public function isTunai(): bool
+    {
+        return $this->metode_pembayaran === 'tunai';
+    }
+
+    public function isTradeIn(): bool
+    {
+        return $this->metode_pembayaran === 'trade_in';
+    }
+
+    // Tambahkan method ini setelah method isTradeIn()
+    public function requiresInstallment(): bool
+    {
+        return in_array($this->metode_pembayaran, ['kredit', 'leasing']);
+    }
+
+    // Method untuk mendapatkan tanggal pembayaran terakhir
+    public function getLastPaymentDate(): ?Carbon
+    {
+        $lastPayment = $this->pembayarans()
+            ->orderBy('tanggal_bayar', 'desc')
+            ->first();
+
+        return $lastPayment ? $lastPayment->tanggal_bayar : null;
+    }
+
+    // Method untuk mendapatkan pembayaran terakhir
+    public function getLastPayment(): ?Pembayaran
+    {
+        return $this->pembayarans()
+            ->orderBy('tanggal_bayar', 'desc')
+            ->first();
+    }
+
+    // Method untuk mendapatkan pembayaran pertama (DP)
+    public function getFirstPayment(): ?Pembayaran
+    {
+        return $this->pembayarans()
+            ->orderBy('tanggal_bayar', 'asc')
+            ->first();
+    }
+
+    // Method untuk mendapatkan total pembayaran DP
+    public function getTotalDP(): float
+    {
+        return (float) $this->pembayarans()
+            ->where('jenis', 'dp')
+            ->sum('jumlah');
+    }
+
+    // Method untuk mendapatkan total cicilan
+    public function getTotalCicilan(): float
+    {
+        return (float) $this->pembayarans()
+            ->where('jenis', 'cicilan')
+            ->sum('jumlah');
+    }
+
+    // Method untuk mendapatkan total pelunasan
+    public function getTotalPelunasan(): float
+    {
+        return (float) $this->pembayarans()
+            ->where('jenis', 'pelunasan')
+            ->sum('jumlah');
+    }
+
+    // Method untuk cek apakah sudah ada DP
+    public function hasDP(): bool
+    {
+        return $this->pembayarans()
+            ->where('jenis', 'dp')
+            ->exists();
+    }
+
+    // Method untuk cek apakah sudah lunas
+    public function isFullyPaid(): bool
+    {
+        return $this->isPaidOff();
+    }
+
+    // Method untuk mendapatkan jumlah cicilan yang sudah dibayar
+    public function getPaidInstallments(): int
+    {
+        return $this->pembayarans()
+            ->where('jenis', 'cicilan')
+            ->count();
+    }
+
+    // Method untuk mendapatkan sisa cicilan (jika kredit)
+    public function getRemainingInstallments(): int
+    {
+        if (!$this->requiresInstallment() || !$this->tenor_bulan) {
+            return 0;
+        }
+
+        $paidInstallments = $this->getPaidInstallments();
+        return max(0, $this->tenor_bulan - $paidInstallments);
+    }
+
+    // Method untuk mendapatkan status pembayaran dalam bentuk text
+    public function getPaymentStatusText(): string
+    {
+        if ($this->isFullyPaid()) {
+            return 'Lunas';
+        } elseif ($this->hasPartialPayment()) {
+            if ($this->hasDP()) {
+                return 'DP Sudah Dibayar';
+            } else {
+                return 'Pembayaran Sebagian';
+            }
+        } else {
+            return 'Belum Ada Pembayaran';
+        }
+    }
+
+    // Method untuk generate nomor faktur
+    private function generateNoFaktur(): string
+    {
+        $date = Carbon::now();
+        $prefix = 'INV';
+        $yearMonth = $date->format('Ym');
+
+        return \DB::transaction(function () use ($prefix, $yearMonth) {
+            $lastPenjualan = self::where('no_faktur', 'like', $prefix . $yearMonth . '%')
+                ->lockForUpdate()
+                ->orderBy('no_faktur', 'desc')
+                ->first();
+
+            if ($lastPenjualan) {
+                $lastNumber = (int) substr($lastPenjualan->no_faktur, -4);
+                $newNumber = $lastNumber + 1;
+            } else {
+                $newNumber = 1;
+            }
+
+            $newNoFaktur = $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+            // Double check untuk memastikan nomor belum ada
+            while (self::where('no_faktur', $newNoFaktur)->exists()) {
+                $newNumber++;
+                $newNoFaktur = $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+            }
+
+            return $newNoFaktur;
+        });
+    }
+
+    // Method untuk mendapatkan ringkasan pembayaran
+    public function getPaymentSummary(): array
+    {
+        return [
+            'total_harga' => $this->total,
+            'total_pembayaran' => $this->total_pembayaran,
+            'sisa_pembayaran' => $this->sisa_pembayaran,
+            'persentase_progress' => $this->persentase_progress_pembayaran,
+            'jumlah_pembayaran' => $this->pembayarans()->count(),
+            'total_dp' => $this->getTotalDP(),
+            'total_cicilan' => $this->getTotalCicilan(),
+            'total_pelunasan' => $this->getTotalPelunasan(),
+            'tanggal_pembayaran_terakhir' => $this->getLastPaymentDate(),
+            'status_pembayaran' => $this->getPaymentStatusText(),
+            'is_lunas' => $this->isFullyPaid(),
+            'has_dp' => $this->hasDP(),
+        ];
+    }
+    public function getNamaMobilLengkapAttribute(): string
+    {
+        if (!$this->stokMobil) {
+            return 'Mobil tidak ditemukan';
+        }
+
+        return $this->stokMobil->nama_lengkap ?? 'Mobil tidak lengkap';
+    }
+
+    public function getMerekMobilAttribute(): string
+    {
+        return $this->stokMobil?->mobil?->merek?->nama ?? 'Tidak ada merek';
+    }
+
+    public function getModelMobilAttribute(): string
+    {
+        return $this->stokMobil?->mobil?->nama ?? 'Tidak ada model';
+    }
+
+    public function getVarianMobilAttribute(): string
+    {
+        return $this->stokMobil?->varian?->nama ?? 'Tidak ada varian';
     }
 }

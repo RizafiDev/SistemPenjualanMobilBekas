@@ -136,18 +136,19 @@ class Pembayaran extends Model
         $prefix = 'KWT';
         $yearMonth = $date->format('Ym');
 
-        $lastPembayaran = self::where('no_kwitansi', 'like', $prefix . $yearMonth . '%')
-            ->orderBy('no_kwitansi', 'desc')
-            ->first();
+        // Gunakan microtime untuk uniqueness
+        $microtime = (int) (microtime(true) * 1000); // Dalam milliseconds
+        $uniqueId = substr($microtime, -4); // Ambil 4 digit terakhir
 
-        if ($lastPembayaran) {
-            $lastNumber = (int) substr($lastPembayaran->no_kwitansi, -4);
-            $newNumber = $lastNumber + 1;
-        } else {
-            $newNumber = 1;
+        $baseNumber = $prefix . $yearMonth . $uniqueId;
+
+        // Jika masih ada duplikasi, tambahkan random number
+        while (self::where('no_kwitansi', $baseNumber)->exists()) {
+            $randomSuffix = str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
+            $baseNumber = $prefix . $yearMonth . $randomSuffix;
         }
 
-        return $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        return $baseNumber;
     }
 
     public function isDP(): bool

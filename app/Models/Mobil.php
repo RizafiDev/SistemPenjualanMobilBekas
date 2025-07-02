@@ -79,12 +79,17 @@ class Mobil extends Model
     // Relationships
     public function merek(): BelongsTo
     {
-        return $this->belongsTo(Merek::class);
+        return $this->belongsTo(Merek::class, 'merek_id');
     }
 
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(Kategori::class);
+    }
+
+    public function stokMobils(): HasMany
+    {
+        return $this->hasMany(StokMobil::class);
     }
 
     // Scopes

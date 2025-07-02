@@ -18,11 +18,12 @@ class StokMobilSeeder extends Seeder
         $stokMobils = [
             [
                 'mobil_id' => 1, // Toyota Avanza
-                'varian_id' => 1, // Avanza 1.5 G CVT
-                'warna' => 'Putih Mutiara',
-                'no_rangka' => 'MHKM1BA3XNJ123456',
-                'no_mesin' => '2NRVE123456',
-                'tahun' => 2024,
+                'varian_id' => 1, // Avanza 1.3 G MT
+                'warna' => 'Putih',
+                'no_rangka' => 'MHFGA8A16PJ123456',
+                'no_mesin' => 'K3-VE123456',
+                'no_polisi' => 'B 1234 ABC', // Tambahkan ini
+                'tahun' => 2023,
                 'kilometer' => 15000,
                 'kondisi' => 'baik',
                 'status' => 'tersedia',
@@ -57,6 +58,7 @@ class StokMobilSeeder extends Seeder
                 'warna' => 'Hitam Metalik',
                 'no_rangka' => 'MHRGE8H5XPJ654321',
                 'no_mesin' => 'L12B123456',
+                'no_polisi' => 'B 5678 DEF', // Tambahkan ini
                 'tahun' => 2023,
                 'kilometer' => 20000,
                 'kondisi' => 'sangat_baik',

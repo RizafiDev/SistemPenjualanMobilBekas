@@ -43,6 +43,7 @@ class StokMobilTransformer extends JsonResource
             'warna' => $this->warna,
             'no_rangka' => $this->no_rangka,
             'no_mesin' => $this->no_mesin,
+            'no_polisi' => $this->no_polisi, // ✅ Added no_polisi field
             'tahun' => $this->tahun,
             'kilometer' => $this->kilometer,
             'kondisi' => $this->kondisi,

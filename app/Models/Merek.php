@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 
 class Merek extends Model
 {
@@ -75,5 +77,9 @@ class Merek extends Model
     public function getStatusAttribute()
     {
         return $this->aktif ? 'Aktif' : 'Tidak Aktif';
+    }
+    public function mobils(): HasMany
+    {
+        return $this->hasMany(Mobil::class);
     }
 }

@@ -20,6 +20,7 @@ class StokMobil extends Model
         'warna',
         'no_rangka',
         'no_mesin',
+        'no_polisi',
         'tahun',
         'kilometer',
         'kondisi',

@@ -12,10 +12,27 @@ class PembayaransRelationManager extends RelationManager
     protected static string $relationship = 'pembayarans';
     protected static ?string $recordTitleAttribute = 'no_kwitansi';
 
+
+
     public function form(Forms\Form $form): Forms\Form
     {
         return $form
             ->schema([
+                // Tambahkan placeholder untuk menampilkan informasi sisa pembayaran
+                Forms\Components\Placeholder::make('info_pembayaran')
+                    ->label('Informasi Pembayaran')
+                    ->content(function ($livewire) {
+                        $penjualan = $livewire->getOwnerRecord();
+                        $totalPembayaran = $penjualan->pembayarans()->sum('jumlah');
+                        $sisaPembayaran = $penjualan->total - $totalPembayaran;
+
+                        return view('filament.components.info-pembayaran', [
+                            'total_harga' => $penjualan->total, // Menggunakan field 'total'
+                            'total_pembayaran' => $totalPembayaran,
+                            'sisa_pembayaran' => $sisaPembayaran
+                        ]);
+                    }),
+
                 Forms\Components\TextInput::make('no_kwitansi')
                     ->label('No. Kwitansi')
                     ->placeholder('Kosongkan untuk generate otomatis')
@@ -27,7 +44,53 @@ class PembayaransRelationManager extends RelationManager
                     ->required()
                     ->numeric()
                     ->prefix('Rp')
-                    ->minValue(0),
+                    ->minValue(0)
+                    ->live()
+                    ->rules([
+                        function ($livewire) {
+                            return function (string $attribute, $value, \Closure $fail) use ($livewire) {
+                                if (!is_numeric($value) || $value <= 0) {
+                                    return;
+                                }
+
+                                $penjualan = $livewire->getOwnerRecord();
+                                $totalPembayaran = $penjualan->pembayarans()->sum('jumlah');
+
+                                // Jika sedang edit, kurangi nilai pembayaran yang sedang diedit
+                                if (
+                                    property_exists($livewire, 'mountedTableActionRecord') &&
+                                    $livewire->mountedTableActionRecord &&
+                                    is_object($livewire->mountedTableActionRecord) &&
+                                    property_exists($livewire->mountedTableActionRecord, 'jumlah')
+                                ) {
+                                    $totalPembayaran -= $livewire->mountedTableActionRecord->jumlah;
+                                }
+
+                                $sisaPembayaran = $penjualan->total - $totalPembayaran;
+
+                                if ($value > $sisaPembayaran) {
+                                    $fail("Jumlah pembayaran tidak boleh melebihi sisa pembayaran: Rp " . number_format($sisaPembayaran, 0, ',', '.'));
+                                }
+                            };
+                        },
+                    ])
+                    ->helperText(function ($livewire) {
+                        $penjualan = $livewire->getOwnerRecord();
+                        $totalPembayaran = $penjualan->pembayarans()->sum('jumlah');
+
+                        // Jika sedang edit, kurangi nilai pembayaran yang sedang diedit
+                        if (
+                            property_exists($livewire, 'mountedTableActionRecord') &&
+                            $livewire->mountedTableActionRecord &&
+                            is_object($livewire->mountedTableActionRecord) &&
+                            property_exists($livewire->mountedTableActionRecord, 'jumlah')
+                        ) {
+                            $totalPembayaran -= $livewire->mountedTableActionRecord->jumlah;
+                        }
+
+                        $sisaPembayaran = $penjualan->total - $totalPembayaran;
+                        return "Maksimal: Rp " . number_format($sisaPembayaran, 0, ',', '.');
+                    }),
 
                 Forms\Components\Select::make('jenis')
                     ->label('Jenis Pembayaran')
@@ -76,6 +139,28 @@ class PembayaransRelationManager extends RelationManager
                     ->maxLength(1000)
                     ->rows(2)
                     ->helperText('Catatan internal untuk admin'),
+
+                Forms\Components\Actions::make([
+                    Forms\Components\Actions\Action::make('isi_sisa')
+                        ->label('Bayar Sisa')
+                        ->color('success')
+                        ->action(function (Forms\Set $set, $livewire) {
+                            $penjualan = $livewire->getOwnerRecord();
+                            $totalPembayaran = $penjualan->pembayarans()->sum('jumlah');
+                            $sisaPembayaran = $penjualan->total - $totalPembayaran;
+
+                            if ($sisaPembayaran > 0) {
+                                $set('jumlah', $sisaPembayaran);
+                                $set('jenis', 'pelunasan');
+                            }
+                        })
+                        ->visible(function ($livewire) {
+                            $penjualan = $livewire->getOwnerRecord();
+                            $totalPembayaran = $penjualan->pembayarans()->sum('jumlah');
+                            return ($penjualan->total - $totalPembayaran) > 0;
+                        }),
+                ])
+                    ->fullWidth(),
             ]);
     }
 
