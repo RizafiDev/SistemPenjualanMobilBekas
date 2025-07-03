@@ -508,45 +508,89 @@ class KaryawanResource extends Resource
                             ->content(function ($record) {
                                 $bulanIni = \Carbon\Carbon::now();
                                 $startOfMonth = $bulanIni->copy()->startOfMonth();
+                                $today = \Carbon\Carbon::today();
                                 $endOfMonth = $bulanIni->copy()->endOfMonth();
+                                $endDate = $today->lt($endOfMonth) ? $today : $endOfMonth;
 
-                                $hadir = Presensi::where('karyawan_id', $record->id)
-                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-                                    ->whereIn('status', [Presensi::STATUS_HADIR, Presensi::STATUS_TERLAMBAT])
-                                    ->count();
+                                // Ambil semua data presensi untuk bulan ini
+                                $presensiRecords = Presensi::where('karyawan_id', $record->id)
+                                    ->whereBetween('tanggal', [$startOfMonth, $endDate])
+                                    ->get();
 
-                                $sakit = Presensi::where('karyawan_id', $record->id)
-                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-                                    ->where('status', Presensi::STATUS_SAKIT)
-                                    ->count();
+                                $stats = [
+                                    'hadir' => 0,
+                                    'terlambat' => 0,
+                                    'tidak_hadir' => 0,
+                                    'sakit' => 0,
+                                    'izin' => 0,
+                                    'cuti' => 0,
+                                    'libur' => 0,
+                                ];
 
-                                $izin = Presensi::where('karyawan_id', $record->id)
-                                    ->whereBetween('tanggal', [$startOfMonth, $endOfMonth])
-                                    ->where('status', Presensi::STATUS_IZIN)
-                                    ->count();
+                                // Hitung dari record yang ada
+                                foreach ($presensiRecords as $p) {
+                                    if (array_key_exists($p->status, $stats)) {
+                                        $stats[$p->status]++;
+                                    }
+                                }
+
+                                // Hitung hari kerja efektif dan tidak hadir yang sebenarnya
+                                $currentDate = $startOfMonth->copy();
+                                $presensiByDate = $presensiRecords->keyBy(function ($item) {
+                                    return $item->tanggal->format('Y-m-d');
+                                });
+
+                                $totalHariKerjaEfektif = 0;
+                                $tidakHadirSebenarnya = 0;
+
+                                while ($currentDate->lte($endDate)) {
+                                    if (!$currentDate->isWeekend()) { // Hari kerja (Senin-Jumat)
+                                        $totalHariKerjaEfektif++;
+
+                                        $dateStr = $currentDate->format('Y-m-d');
+                                        if (!$presensiByDate->has($dateStr)) {
+                                            // Tidak ada record presensi untuk hari kerja ini = tidak hadir
+                                            $tidakHadirSebenarnya++;
+                                        }
+                                    }
+                                    $currentDate->addDay();
+                                }
+
+                                // Gabungkan hadir dan terlambat untuk total kehadiran
+                                $totalHadir = $stats['hadir'] + $stats['terlambat'];
 
                                 $cuti = PengajuanCuti::where('karyawan_id', $record->id)
                                     ->where('status', PengajuanCuti::STATUS_DISETUJUI)
-                                    ->whereBetween('tanggal_mulai', [$startOfMonth, $endOfMonth])
+                                    ->where(function ($query) use ($startOfMonth, $endDate) {
+                                        $query->whereBetween('tanggal_mulai', [$startOfMonth, $endDate])
+                                            ->orWhere(function ($q) use ($startOfMonth, $endDate) {
+                                                $q->where('tanggal_mulai', '<=', $startOfMonth)
+                                                    ->where('tanggal_selesai', '>=', $startOfMonth);
+                                            });
+                                    })
                                     ->sum('jumlah_hari');
 
                                 return new \Illuminate\Support\HtmlString("
-                                    <div class='grid grid-cols-4 gap-4'>
+                                    <div class='grid grid-cols-5 gap-4'>
                                         <div class='text-center p-3 bg-green-50 rounded-lg'>
-                                            <div class='text-2xl font-bold text-green-600'>{$hadir}</div>
+                                            <div class='text-2xl font-bold text-green-600'>{$totalHadir}</div>
                                             <div class='text-sm text-green-500'>Hadir Bulan Ini</div>
                                         </div>
                                         <div class='text-center p-3 bg-yellow-50 rounded-lg'>
-                                            <div class='text-2xl font-bold text-yellow-600'>{$sakit}</div>
+                                            <div class='text-2xl font-bold text-yellow-600'>{$stats['sakit']}</div>
                                             <div class='text-sm text-yellow-500'>Sakit Bulan Ini</div>
                                         </div>
                                         <div class='text-center p-3 bg-gray-50 rounded-lg'>
-                                            <div class='text-2xl font-bold text-gray-600'>{$izin}</div>
+                                            <div class='text-2xl font-bold text-gray-600'>{$stats['izin']}</div>
                                             <div class='text-sm text-gray-500'>Izin Bulan Ini</div>
                                         </div>
                                         <div class='text-center p-3 bg-blue-50 rounded-lg'>
                                             <div class='text-2xl font-bold text-blue-600'>{$cuti}</div>
                                             <div class='text-sm text-blue-500'>Hari Cuti Bulan Ini</div>
+                                        </div>
+                                        <div class='text-center p-3 bg-red-50 rounded-lg'>
+                                            <div class='text-2xl font-bold text-red-600'>{$tidakHadirSebenarnya}</div>
+                                            <div class='text-sm text-red-500'>Tidak Hadir Bulan Ini</div>
                                         </div>
                                     </div>
                                 ");

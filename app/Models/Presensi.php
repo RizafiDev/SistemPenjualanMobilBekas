@@ -81,12 +81,12 @@ class Presensi extends Model
 
     public function getFotoMasukUrlAttribute(): ?string
     {
-        return $this->foto_masuk ? Storage::url($this->foto_masuk) : null;
+        return $this->foto_masuk ? asset($this->foto_masuk) : null;
     }
 
     public function getFotoPulangUrlAttribute(): ?string
     {
-        return $this->foto_pulang ? Storage::url($this->foto_pulang) : null;
+        return $this->foto_pulang ? asset($this->foto_pulang) : null;
     }
 
     public function getJamKerjaFormattedAttribute(): string

@@ -28,20 +28,6 @@ class ViewKaryawan extends ViewRecord
         ];
     }
 
-    protected function getHeaderWidgets(): array
-    {
-        return [
-            KaryawanAbsensiStats::class,
-        ];
-    }
-
-    protected function getFooterWidgets(): array
-    {
-        return [
-            KaryawanAbsensiTable::class,
-            KaryawanCutiTable::class,
-        ];
-    }
 
     // Untuk pass record ke widgets
     protected function getHeaderWidgetsData(): array

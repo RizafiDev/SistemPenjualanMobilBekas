@@ -19,6 +19,8 @@ use Illuminate\Database\Eloquent\Collection;
 use Filament\Notifications\Notification;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\FontWeight;
+use App\Exports\PresensiExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class PresensiResource extends Resource
 {
@@ -105,15 +107,15 @@ class PresensiResource extends Resource
                         Forms\Components\FileUpload::make('foto_masuk')
                             ->label('Foto Masuk')
                             ->image()
-                            ->directory('presensi/masuk')
-                            ->visibility('private')
+                            ->directory('storage/presensi/masuk')
+                            ->disk('public')
                             ->columnSpan(1),
 
                         Forms\Components\FileUpload::make('foto_pulang')
                             ->label('Foto Pulang')
                             ->image()
-                            ->directory('presensi/pulang')
-                            ->visibility('private')
+                            ->directory('storage/presensi/keluar')
+                            ->disk('public')
                             ->columnSpan(1),
                     ])
                     ->columns(2)
@@ -165,6 +167,96 @@ class PresensiResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->headerActions([
+                Tables\Actions\Action::make('export_rekap')
+                    ->label('Export Rekap Presensi')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\Section::make('Periode Export')
+                            ->description('Pilih periode data yang akan diekspor')
+                            ->schema([
+                                Forms\Components\Grid::make(2)
+                                    ->schema([
+                                        Forms\Components\DatePicker::make('start_date')
+                                            ->label('Tanggal Mulai')
+                                            ->default(now()->startOfMonth())
+                                            ->required(),
+                                        Forms\Components\DatePicker::make('end_date')
+                                            ->label('Tanggal Akhir')
+                                            ->default(now()->endOfMonth())
+                                            ->required(),
+                                    ]),
+                            ]),
+                        Forms\Components\Section::make('Filter Data')
+                            ->description('Filter data yang akan diekspor (opsional)')
+                            ->schema([
+                                Forms\Components\Select::make('karyawan_filter')
+                                    ->label('Pilih Karyawan')
+                                    ->relationship('karyawan', 'nama_lengkap')
+                                    ->searchable()
+                                    ->preload()
+                                    ->placeholder('Semua Karyawan'),
+                                Forms\Components\Select::make('status_filter')
+                                    ->label('Status Presensi')
+                                    ->options(Presensi::getStatusOptions())
+                                    ->multiple()
+                                    ->placeholder('Semua Status'),
+                            ])
+                            ->collapsible()
+                            ->collapsed(),
+                    ])
+                    ->action(function (array $data) {
+                        $period = '';
+                        if ($data['start_date'] && $data['end_date']) {
+                            $start = \Carbon\Carbon::parse($data['start_date'])->format('d-m-Y');
+                            $end = \Carbon\Carbon::parse($data['end_date'])->format('d-m-Y');
+                            $period = "_{$start}_sampai_{$end}";
+                        }
+
+                        $fileName = 'rekap_presensi' . $period . '_' .
+                            now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+                        Notification::make()
+                            ->title('Export Berhasil!')
+                            ->body('File rekap presensi sedang diunduh.')
+                            ->success()
+                            ->send();
+
+                        return Excel::download(
+                            new PresensiExport(
+                                $data['start_date'],
+                                $data['end_date'],
+                                $data['karyawan_filter'] ?? null,
+                                $data['status_filter'] ?? null
+                            ),
+                            $fileName
+                        );
+                    }),
+
+
+                Tables\Actions\Action::make('export_bulan_ini')
+                    ->label('Export Bulan Ini')
+                    ->icon('heroicon-o-calendar')
+                    ->color('warning')
+                    ->action(function () {
+                        $fileName = 'presensi_' . now()->format('F_Y') . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+                        Notification::make()
+                            ->title('Export Bulan Ini')
+                            ->body('Mengunduh data presensi bulan ' . now()->format('F Y'))
+                            ->success()
+                            ->send();
+
+                        return Excel::download(
+                            new PresensiExport(
+                                now()->startOfMonth(),
+                                now()->endOfMonth()
+                            ),
+                            $fileName
+                        );
+                    }),
+            ])
             ->columns([
                 Tables\Columns\TextColumn::make('karyawan.nama_lengkap')
                     ->label('Nama Karyawan')
@@ -267,6 +359,33 @@ class PresensiResource extends Resource
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
+
+                // Action Export Individual
+                Tables\Actions\Action::make('export_individual')
+                    ->label('Export')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('success')
+                    ->form([
+                        Forms\Components\DatePicker::make('start_date')
+                            ->label('Tanggal Mulai')
+                            ->default(now()->startOfMonth()),
+                        Forms\Components\DatePicker::make('end_date')
+                            ->label('Tanggal Akhir')
+                            ->default(now()->endOfMonth()),
+                    ])
+                    ->action(function (array $data, $record) {
+                        $fileName = 'presensi_' . $record->karyawan->nama_lengkap . '_' .
+                            now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+                        return Excel::download(
+                            new PresensiExport(
+                                $data['start_date'],
+                                $data['end_date'],
+                                $record->karyawan_id
+                            ),
+                            $fileName
+                        );
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -278,13 +397,49 @@ class PresensiResource extends Resource
                         ->label('Export Excel')
                         ->icon('heroicon-o-document-arrow-down')
                         ->color('success')
-                        ->action(function (Collection $records) {
-                            // Implementasi export Excel bisa ditambahkan di sini
+                        ->form([
+                            Forms\Components\Grid::make(2)
+                                ->schema([
+                                    Forms\Components\DatePicker::make('start_date')
+                                        ->label('Tanggal Mulai')
+                                        ->default(now()->startOfMonth())
+                                        ->required(),
+                                    Forms\Components\DatePicker::make('end_date')
+                                        ->label('Tanggal Akhir')
+                                        ->default(now()->endOfMonth())
+                                        ->required(),
+                                ]),
+                            Forms\Components\Select::make('karyawan_filter')
+                                ->label('Filter Karyawan')
+                                ->relationship('karyawan', 'nama_lengkap')
+                                ->searchable()
+                                ->preload()
+                                ->placeholder('Semua Karyawan (kosongkan untuk semua)'),
+                            Forms\Components\Select::make('status_filter')
+                                ->label('Filter Status')
+                                ->options(Presensi::getStatusOptions())
+                                ->multiple()
+                                ->placeholder('Semua Status (kosongkan untuk semua)'),
+                        ])
+                        ->action(function (Collection $records, array $data) {
+                            $fileName = 'rekap_presensi_' .
+                                now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+                            $startDate = $data['start_date'] ?? null;
+                            $endDate = $data['end_date'] ?? null;
+                            $karyawanId = $data['karyawan_filter'] ?? null;
+                            $status = $data['status_filter'] ?? null;
+
                             Notification::make()
-                                ->title('Export berhasil!')
-                                ->body('Data presensi telah berhasil diekspor.')
+                                ->title('Export dimulai!')
+                                ->body('File Excel sedang diproses, download akan dimulai sebentar lagi.')
                                 ->success()
                                 ->send();
+
+                            return Excel::download(
+                                new PresensiExport($startDate, $endDate, $karyawanId, $status),
+                                $fileName
+                            );
                         }),
 
                     BulkAction::make('tandai_hadir')
@@ -465,6 +620,9 @@ class PresensiResource extends Resource
                                     ->width(250)
                                     ->square()
                                     ->extraAttributes(['class' => 'rounded-lg shadow-lg'])
+                                    ->state(function ($record) {
+                                        return $record->foto_masuk_url ? asset($record->foto_masuk_url) : null;
+                                    })
                                     ->placeholder('Tidak ada foto masuk'),
                             ])->columnSpan(1),
 
@@ -475,6 +633,9 @@ class PresensiResource extends Resource
                                     ->width(250)
                                     ->square()
                                     ->extraAttributes(['class' => 'rounded-lg shadow-lg'])
+                                    ->state(function ($record) {
+                                        return $record->foto_pulang_url ? asset($record->foto_pulang_url) : null;
+                                    })
                                     ->placeholder('Tidak ada foto pulang'),
                             ])->columnSpan(1),
                         ]),
@@ -602,6 +763,7 @@ class PresensiResource extends Resource
             'create' => Pages\CreatePresensi::route('/create'),
             'view' => Pages\ViewPresensi::route('/{record}'),
             'edit' => Pages\EditPresensi::route('/{record}/edit'),
+            'export' => Pages\ExportPresensi::route('/export'),
         ];
     }
 

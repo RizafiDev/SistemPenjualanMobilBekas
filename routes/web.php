@@ -14,10 +14,10 @@ use App\Http\Controllers\PenggajianController;
 |--------------------------------------------------------------------------
 */
 
-// Route untuk halaman utama
+// Default login route untuk Laravel auth system
 Route::get('/', function () {
-    return view('welcome');
-})->name('home');
+    return redirect()->route('karyawan.login');
+})->name('login');
 
 // Default login route untuk Laravel auth system
 Route::get('/login', function () {

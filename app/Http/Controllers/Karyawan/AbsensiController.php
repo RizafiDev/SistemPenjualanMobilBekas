@@ -4,237 +4,254 @@ namespace App\Http\Controllers\Karyawan;
 
 use App\Http\Controllers\Controller;
 use App\Models\Presensi;
+use App\Models\Karyawan;
 use App\Models\PengaturanKantor;
-use App\Models\PengajuanCuti;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AbsensiController extends Controller
 {
-    public function index(Request $request)
+    public function index()
     {
-        $karyawan = Auth::guard('karyawan')->user();
-        $pengaturanKantor = PengaturanKantor::aktif()->first();
-
+        $karyawan = auth()->guard('karyawan')->user();
         $presensiHariIni = Presensi::where('karyawan_id', $karyawan->id)
             ->whereDate('tanggal', today())
             ->first();
-
-        $statistikBulan = $this->getStatistikBulan($karyawan->id);
 
         $riwayatPresensi = Presensi::where('karyawan_id', $karyawan->id)
             ->whereDate('tanggal', '>=', now()->subDays(7))
             ->orderBy('tanggal', 'desc')
             ->get();
 
-        $pengajuanCutiList = PengajuanCuti::where('karyawan_id', $karyawan->id)
-            ->orderByDesc('created_at')
-            ->get();
+        $pengaturanKantor = PengaturanKantor::aktif()->first();
+
+        $statistikBulan = $this->getStatistikBulan($karyawan->id);
 
         return view('karyawan.absensi.index', compact(
             'karyawan',
             'presensiHariIni',
-            'statistikBulan',
             'riwayatPresensi',
             'pengaturanKantor',
-            'pengajuanCutiList'
+            'statistikBulan'
         ));
-    }
-
-    private function getStatistikBulan($karyawanId)
-    {
-        $startOfMonth = Carbon::now()->startOfMonth();
-        $today = Carbon::today(); // Stats up to today within the current month
-
-        $presensiRecords = Presensi::where('karyawan_id', $karyawanId)
-            ->whereBetween('tanggal', [$startOfMonth, $today])
-            ->get();
-
-        $stats = [
-            'hadir' => 0,
-            'terlambat' => 0,
-            'tidak_hadir_calculated' => 0,
-            'sakit' => 0,
-            'izin' => 0,
-            'cuti' => 0,
-            'libur' => 0, // 'libur' from records
-            'total_jam_kerja' => 0,
-            'total_hari_kerja_efektif' => 0,
-        ];
-
-        foreach ($presensiRecords as $p) {
-            if (array_key_exists($p->status, $stats)) {
-                $stats[$p->status]++;
-            }
-            $stats['total_jam_kerja'] += $p->jam_kerja ?? 0;
-        }
-
-        // Count explicit 'tidak_hadir' from records (if any, though usually it's an absence of record)
-        // This is already handled by the loop if 'tidak_hadir' is a valid status in $stats array.
-        // For clarity, ensure 'tidak_hadir' is a key in $stats if it's a possible status.
-        // $stats['tidak_hadir'] = $presensiRecords->where('status', Presensi::STATUS_TIDAK_HADIR)->count();
-
-
-        $currentDate = $startOfMonth->copy();
-        while ($currentDate->lte($today)) {
-            if (!$currentDate->isWeekend()) { // Assuming Mon-Fri are workdays. Consider holidays.
-                $stats['total_hari_kerja_efektif']++;
-                $presensiForDay = $presensiRecords->first(function ($p) use ($currentDate) {
-                    return $p->tanggal->isSameDay($currentDate);
-                });
-
-                if (!$presensiForDay) {
-                    // No record for this workday, count as 'tidak_hadir_calculated'
-                    // This needs to be more robust by checking approved leaves (e.g., from PengajuanCuti)
-                    // For now, this is a basic count of workdays with no attendance record.
-                    $stats['tidak_hadir_calculated']++;
-                }
-            }
-            $currentDate->addDay();
-        }
-
-        // The view expects 'tidak_hadir', so let's use the calculated one.
-        // If there's a system where 'tidak_hadir' is explicitly recorded, merge logic.
-        $stats['tidak_hadir'] = $stats['tidak_hadir_calculated'];
-        unset($stats['tidak_hadir_calculated']);
-
-
-        $stats['total_jam_kerja'] = round($stats['total_jam_kerja'], 2);
-        return $stats;
     }
 
     public function absenMasuk(Request $request)
     {
-        return $this->handleAbsen($request, 'masuk');
+        try {
+            $karyawan = auth()->guard('karyawan')->user();
+
+            // Validasi input
+            $request->validate([
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
+                'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            // Cek apakah sudah absen hari ini
+            $presensiHariIni = Presensi::where('karyawan_id', $karyawan->id)
+                ->whereDate('tanggal', today())
+                ->first();
+
+            if ($presensiHariIni && $presensiHariIni->jam_masuk) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan absen masuk hari ini.'
+                ], 400);
+            }
+
+            // Validasi lokasi jika ada pengaturan kantor
+            $pengaturanKantor = PengaturanKantor::aktif()->first();
+            if ($pengaturanKantor && $pengaturanKantor->latitude && $pengaturanKantor->longitude) {
+                $distance = $this->calculateDistance(
+                    $request->latitude,
+                    $request->longitude,
+                    $pengaturanKantor->latitude,
+                    $pengaturanKantor->longitude
+                );
+
+                if ($distance > $pengaturanKantor->radius_meter) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Anda berada di luar jangkauan lokasi kantor.'
+                    ], 400);
+                }
+            }
+
+            // Upload foto ke folder yang diinginkan
+            $fotoPath = null;
+            if ($request->hasFile('foto')) {
+                $foto = $request->file('foto');
+                $fileName = 'masuk_' . $karyawan->id . '_' . date('Y-m-d_H-i-s') . '.' . $foto->getClientOriginalExtension();
+
+                // Pastikan folder ada
+                $uploadPath = public_path('storage/presensi/masuk');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+
+                // Simpan file
+                $foto->move($uploadPath, $fileName);
+                $fotoPath = 'storage/presensi/masuk/' . $fileName;
+
+                // Log untuk debugging
+                Log::info('Foto absen masuk berhasil disimpan', [
+                    'karyawan_id' => $karyawan->id,
+                    'file_path' => $fotoPath,
+                    'full_path' => public_path($fotoPath)
+                ]);
+            }
+
+            // Simpan atau update presensi
+            $presensi = $presensiHariIni ?: new Presensi();
+            $presensi->karyawan_id = $karyawan->id;
+            $presensi->tanggal = today();
+            $presensi->jam_masuk = now();
+            $presensi->foto_masuk = $fotoPath;
+            $presensi->latitude_masuk = $request->latitude;
+            $presensi->longitude_masuk = $request->longitude;
+            $presensi->status = Presensi::STATUS_HADIR;
+            $presensi->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Absen masuk berhasil dicatat!',
+                'data' => [
+                    'jam_masuk' => $presensi->jam_masuk->format('H:i:s'),
+                    'foto_url' => $fotoPath ? asset($fotoPath) : null,
+                    'status' => $presensi->status_label
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error absen masuk: ' . $e->getMessage(), [
+                'karyawan_id' => auth()->guard('karyawan')->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mencatat absen masuk.'
+            ], 500);
+        }
     }
 
     public function absenPulang(Request $request)
     {
-        return $this->handleAbsen($request, 'pulang');
-    }
-
-    private function handleAbsen(Request $request, string $type)
-    {
-        $rules = [
-            'latitude' => 'required|numeric',
-            'longitude' => 'required|numeric',
-            'foto' => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-        ];
-        $messages = [
-            'latitude.required' => 'Lokasi diperlukan untuk absen.',
-            'longitude.required' => 'Lokasi diperlukan untuk absen.',
-            'foto.required' => 'Foto diperlukan untuk absen.',
-            'foto.image' => 'File harus berupa gambar.',
-            'foto.mimes' => 'Format foto harus jpeg, png, jpg, atau webp.',
-            'foto.max' => 'Ukuran foto maksimal 2MB.',
-        ];
-
-        if ($type === 'pulang') {
-            $rules['keterangan'] = 'nullable|string|max:500';
-            $messages['keterangan.string'] = 'Keterangan harus berupa teks.';
-            $messages['keterangan.max'] = 'Keterangan tidak boleh lebih dari 500 karakter.';
-        }
-
-        $validator = Validator::make($request->all(), $rules, $messages);
-
-        if ($validator->fails()) {
-            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
-        }
-
-        $pengaturanKantor = PengaturanKantor::aktif()->first();
-        if (!$pengaturanKantor) {
-            return response()->json(['success' => false, 'message' => 'Pengaturan kantor aktif tidak ditemukan.'], 500);
-        }
-
-        if ($pengaturanKantor->latitude && $pengaturanKantor->longitude && $pengaturanKantor->radius_meter) {
-            $locationValidationResponse = $this->validateLocation($request->latitude, $request->longitude, $pengaturanKantor);
-            if ($locationValidationResponse)
-                return $locationValidationResponse;
-        } else {
-            Log::warning("Absen {$type}: Pengaturan lokasi kantor (lat/long/radius) tidak lengkap. Validasi lokasi dilewati.");
-        }
-
-        $karyawan = Auth::guard('karyawan')->user();
-        $tanggal = today();
-        $now = now();
-
-        $presensi = Presensi::firstOrNew([
-            'karyawan_id' => $karyawan->id,
-            'tanggal' => $tanggal,
-        ]);
-
-        if ($type === 'masuk') {
-            if ($presensi->exists && $presensi->jam_masuk) {
-                return response()->json(['success' => false, 'message' => 'Anda sudah melakukan absen masuk hari ini.'], 400);
-            }
-            $presensi->jam_masuk = $now;
-            $presensi->latitude_masuk = $request->latitude;
-            $presensi->longitude_masuk = $request->longitude;
-            if (!$presensi->status) { // Only set initial status if not already set (e.g. from admin)
-                $presensi->status = Presensi::STATUS_HADIR; // Model's saving event will adjust if late
-            }
-        } elseif ($type === 'pulang') {
-            if (!$presensi->exists || !$presensi->jam_masuk) {
-                return response()->json(['success' => false, 'message' => 'Anda belum melakukan absen masuk hari ini.'], 400);
-            }
-            if ($presensi->jam_pulang) {
-                return response()->json(['success' => false, 'message' => 'Anda sudah melakukan absen pulang hari ini.'], 400);
-            }
-            $presensi->jam_pulang = $now;
-            $presensi->latitude_pulang = $request->latitude;
-            $presensi->longitude_pulang = $request->longitude;
-
-            // Simpan keterangan jika ada (untuk pulang cepat)
-            if ($request->filled('keterangan')) {
-                $existingKeterangan = $presensi->keterangan ? $presensi->keterangan . "\n" : "";
-                $presensi->keterangan = $existingKeterangan . "Alasan Pulang Cepat: " . $request->keterangan;
-            }
-        }
-
-        $foto = $request->file('foto');
-        $fotoFieldName = "foto_{$type}";
-        $namaFoto = "absen_{$type}_{$karyawan->id}_{$now->timestamp}.{$foto->getClientOriginalExtension()}";
-        // Store in 'public/absensi/masuk' or 'public/absensi/pulang'
-        $fotoPath = $foto->storeAs("public/absensi/{$type}", $namaFoto);
-
-        if (!$fotoPath) {
-            return response()->json(['success' => false, 'message' => 'Gagal menyimpan foto.'], 500);
-        }
-        // Remove 'public/' prefix for database storage if Storage::url() or asset() is used later
-        $presensi->{$fotoFieldName} = "absensi/{$type}/" . $namaFoto;
-
-
         try {
-            $presensi->save();
-            $presensi->refresh();
+            $karyawan = auth()->guard('karyawan')->user();
+
+            // Validasi input
+            $request->validate([
+                'latitude' => 'required|numeric',
+                'longitude' => 'required|numeric',
+                'foto' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            // Cek presensi hari ini
+            $presensiHariIni = Presensi::where('karyawan_id', $karyawan->id)
+                ->whereDate('tanggal', today())
+                ->first();
+
+            if (!$presensiHariIni || !$presensiHariIni->jam_masuk) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda belum melakukan absen masuk hari ini.'
+                ], 400);
+            }
+
+            if ($presensiHariIni->jam_pulang) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda sudah melakukan absen pulang hari ini.'
+                ], 400);
+            }
+
+            // Upload foto ke folder yang diinginkan
+            $fotoPath = null;
+            if ($request->hasFile('foto')) {
+                $foto = $request->file('foto');
+                $fileName = 'keluar_' . $karyawan->id . '_' . date('Y-m-d_H-i-s') . '.' . $foto->getClientOriginalExtension();
+
+                // Pastikan folder ada
+                $uploadPath = public_path('storage/presensi/keluar');
+                if (!file_exists($uploadPath)) {
+                    mkdir($uploadPath, 0755, true);
+                }
+
+                // Simpan file
+                $foto->move($uploadPath, $fileName);
+                $fotoPath = 'storage/presensi/keluar/' . $fileName;
+
+                // Log untuk debugging
+                Log::info('Foto absen pulang berhasil disimpan', [
+                    'karyawan_id' => $karyawan->id,
+                    'file_path' => $fotoPath,
+                    'full_path' => public_path($fotoPath)
+                ]);
+            }
+
+            // Update presensi
+            $presensiHariIni->jam_pulang = now();
+            $presensiHariIni->foto_pulang = $fotoPath;
+            $presensiHariIni->latitude_pulang = $request->latitude;
+            $presensiHariIni->longitude_pulang = $request->longitude;
+
+            if ($request->has('keterangan')) {
+                $presensiHariIni->keterangan = $request->keterangan;
+            }
+
+            $presensiHariIni->save();
 
             return response()->json([
                 'success' => true,
-                'message' => "Absen {$type} berhasil.",
-                'data' => $presensi
-            ], 200);
+                'message' => 'Absen pulang berhasil dicatat!',
+                'data' => [
+                    'jam_pulang' => $presensiHariIni->jam_pulang->format('H:i:s'),
+                    'foto_url' => $fotoPath ? asset($fotoPath) : null,
+                    'jam_kerja' => $presensiHariIni->jam_kerja_formatted
+                ]
+            ]);
 
         } catch (\Exception $e) {
-            Log::error("Absen {$type} gagal: " . $e->getMessage(), ['exception' => $e]);
-            if (isset($fotoPath) && Storage::exists($fotoPath)) { // Check if $fotoPath was set
-                Storage::delete($fotoPath); // Attempt to delete stored photo on error
-            }
-            return response()->json(['success' => false, 'message' => "Absen {$type} gagal: Terjadi kesalahan sistem."], 500);
+            Log::error('Error absen pulang: ' . $e->getMessage(), [
+                'karyawan_id' => auth()->guard('karyawan')->id(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mencatat absen pulang.'
+            ], 500);
         }
     }
 
-    private function validateLocation($latitude, $longitude, PengaturanKantor $pengaturanKantor)
+    private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
-        if (!$pengaturanKantor->isWithinRadius($latitude, $longitude)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda berada di luar radius kantor yang diizinkan (' . $pengaturanKantor->radius_meter . 'm).'
-            ], 422);
-        }
-        return null;
+        $earthRadius = 6371000; // meter
+        $dLat = deg2rad($lat2 - $lat1);
+        $dLon = deg2rad($lon2 - $lon1);
+        $a = sin($dLat / 2) * sin($dLat / 2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon / 2) * sin($dLon / 2);
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+        return $earthRadius * $c;
+    }
+
+    private function getStatistikBulan($karyawanId)
+    {
+        $bulanIni = Presensi::where('karyawan_id', $karyawanId)
+            ->whereMonth('tanggal', now()->month)
+            ->whereYear('tanggal', now()->year)
+            ->get();
+
+        return [
+            'hadir' => $bulanIni->where('status', Presensi::STATUS_HADIR)->count(),
+            'terlambat' => $bulanIni->where('status', Presensi::STATUS_TERLAMBAT)->count(),
+            'tidak_hadir' => $bulanIni->where('status', Presensi::STATUS_TIDAK_HADIR)->count(),
+            'izin' => $bulanIni->where('status', Presensi::STATUS_IZIN)->count(),
+            'sakit' => $bulanIni->where('status', Presensi::STATUS_SAKIT)->count(),
+            'cuti' => $bulanIni->where('status', Presensi::STATUS_CUTI)->count(),
+        ];
     }
 }
