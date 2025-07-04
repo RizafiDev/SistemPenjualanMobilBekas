@@ -10,7 +10,7 @@ class CreateHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = JanjiTemuResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     public static function getMethod()
     {
@@ -49,3 +49,5 @@ class CreateHandler extends Handlers
         return static::sendSuccessResponse($model, "Janji temu berhasil dibuat");
     }
 }
+
+

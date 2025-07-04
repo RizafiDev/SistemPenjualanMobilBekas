@@ -13,7 +13,7 @@ class DetailHandler extends Handlers
 {
     public static string|null $uri = '/{id}';
     public static string|null $resource = MobilResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
 
     /**
@@ -39,3 +39,6 @@ class DetailHandler extends Handlers
         return new MobilTransformer($query);
     }
 }
+
+
+

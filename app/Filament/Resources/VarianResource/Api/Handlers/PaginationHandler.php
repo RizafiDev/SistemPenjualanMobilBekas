@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = VarianResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Make this public, but protect via middleware
 
     /**
      * List of Varian
@@ -53,3 +53,6 @@ class PaginationHandler extends Handlers
         return VarianTransformer::collection($query);
     }
 }
+
+
+

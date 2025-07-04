@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = KategoriResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * List of Kategori
@@ -43,3 +43,6 @@ class PaginationHandler extends Handlers
         return KategoriTransformer::collection($query);
     }
 }
+
+
+

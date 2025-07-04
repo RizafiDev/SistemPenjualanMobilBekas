@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = StokMobilResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * List of StokMobil
@@ -115,3 +115,6 @@ class PaginationHandler extends Handlers
         return StokMobilTransformer::collection($result);
     }
 }
+
+
+

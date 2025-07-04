@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = RiwayatServisResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * List of RiwayatServis
@@ -52,3 +52,6 @@ class PaginationHandler extends Handlers
         return RiwayatServisTransformer::collection($query);
     }
 }
+
+
+

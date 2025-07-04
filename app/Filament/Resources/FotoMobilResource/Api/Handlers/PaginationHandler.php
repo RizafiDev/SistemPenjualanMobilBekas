@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = FotoMobilResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
 
 
@@ -50,3 +50,6 @@ class PaginationHandler extends Handlers
         return FotoMobilTransformer::collection($query);
     }
 }
+
+
+

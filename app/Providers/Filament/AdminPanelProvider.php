@@ -56,6 +56,9 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 ApiServicePlugin::make()
+                    ->middleware([
+                        \App\Http\Middleware\ApiKeyMiddleware::class
+                    ])
             ])
             ->authMiddleware([
                 Authenticate::class,

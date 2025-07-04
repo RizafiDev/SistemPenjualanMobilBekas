@@ -11,7 +11,7 @@ class PaginationHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = MobilResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * List of Mobil
@@ -47,3 +47,6 @@ class PaginationHandler extends Handlers
         return MobilTransformer::collection($query);
     }
 }
+
+
+

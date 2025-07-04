@@ -37,3 +37,6 @@ class DetailHandler extends Handlers
         return new JanjiTemuTransformer($query);
     }
 }
+
+
+

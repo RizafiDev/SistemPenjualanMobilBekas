@@ -13,7 +13,7 @@ class DetailHandler extends Handlers
 {
     public static string|null $uri = '/{id}';
     public static string|null $resource = RiwayatServisResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * Show RiwayatServis
@@ -38,3 +38,6 @@ class DetailHandler extends Handlers
         return new RiwayatServisTransformer($query);
     }
 }
+
+
+

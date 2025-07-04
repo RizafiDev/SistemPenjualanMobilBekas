@@ -10,7 +10,7 @@ class CreateHandler extends Handlers
 {
     public static string|null $uri = '/';
     public static string|null $resource = KategoriResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
     public static function getMethod()
     {
         return Handlers::POST;
@@ -38,3 +38,5 @@ class CreateHandler extends Handlers
         return static::sendSuccessResponse($model, "Successfully Create Resource");
     }
 }
+
+

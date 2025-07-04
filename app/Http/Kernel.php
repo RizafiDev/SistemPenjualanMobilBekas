@@ -34,7 +34,6 @@ class Kernel extends HttpKernel
         ],
 
         'api' => [
-            // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
@@ -58,5 +57,9 @@ class Kernel extends HttpKernel
 
         // Custom middleware untuk karyawan authentication
         'auth.karyawan' => \App\Http\Middleware\KaryawanAuth::class,
+
+        // API Key middleware
+        'api.key' => \App\Http\Middleware\ApiKeyMiddleware::class,
+        'filament.api.key' => \App\Http\Middleware\FilamentApiKeyMiddleware::class,
     ];
 }

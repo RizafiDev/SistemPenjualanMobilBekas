@@ -12,7 +12,7 @@ class DetailHandler extends Handlers
 {
     public static string|null $uri = '/{id}';
     public static string|null $resource = StokMobilResource::class;
-    public static bool $public = true;
+    public static bool $public = true; // Public API, protected by middleware
 
     /**
      * Show StokMobil
@@ -45,3 +45,6 @@ class DetailHandler extends Handlers
         return new StokMobilTransformer($query);
     }
 }
+
+
+
