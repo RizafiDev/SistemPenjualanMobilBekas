@@ -23,6 +23,8 @@ class PaginationHandler extends Handlers
     {
         $query = static::getEloquentQuery();
 
+        $query = $query->where('status', 'published');
+
         $query = QueryBuilder::for($query)
             ->allowedFields($this->getAllowedFields() ?? [])
             ->allowedSorts([
