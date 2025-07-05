@@ -17,6 +17,7 @@ import type {
     PaginatedResponse,
     CarSearchFilters,
     Varian,
+    Article, // ✅ Added Article type
 } from "./types";
 
 // Generic fetcher for SWR using the enhanced API fetch
@@ -282,6 +283,51 @@ export const useMobilsByMerek = (merekId: string | number) => {
 
 export const useMobilsByKategori = (kategoriId: string | number) => {
     return useMobils({ kategori_id: Number(kategoriId) });
+};
+
+// Article hooks
+export const useArticles = (params?: {
+    page?: number;
+    search?: string;
+    status?: 'draft' | 'published' | 'archived';
+    sortBy?: string;
+    per_page?: number;
+}) => {
+    const queryParams = params
+        ? new URLSearchParams(
+              Object.entries(params).reduce((acc, [key, value]) => {
+                  if (value !== undefined && value !== "") {
+                      acc[key] = value.toString();
+                  }
+                  return acc;
+              }, {} as Record<string, string>)
+          ).toString()
+        : "";
+
+    const url = buildApiUrl(
+        `${API_ENDPOINTS.ARTICLES}${queryParams ? `?${queryParams}` : ""}`
+    );
+
+    return useSWR<PaginatedResponse<Article>>(url, fetcher);
+};
+
+export const useArticle = (slug: string) => {
+    const url = buildApiUrl(`${API_ENDPOINTS.ARTICLES}/${slug}`);
+    return useSWR<Article>(slug ? url : null, fetcher);
+};
+
+export const useLatestArticles = (limit: number = 6) => {
+    const url = buildApiUrl(
+        `${API_ENDPOINTS.ARTICLES}?status=published&sort=-published_at&per_page=${limit}`
+    );
+    return useSWR<PaginatedResponse<Article>>(url, fetcher);
+};
+
+export const usePopularArticles = (limit: number = 5) => {
+    const url = buildApiUrl(
+        `${API_ENDPOINTS.ARTICLES}?status=published&sort=-created_at&per_page=${limit}`
+    );
+    return useSWR<PaginatedResponse<Article>>(url, fetcher);
 };
 
 // Alias hooks for consistency

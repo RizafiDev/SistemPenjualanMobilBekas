@@ -165,6 +165,24 @@ export interface Varian extends BaseModel {
     mobil?: Mobil;
 }
 
+// Article types
+export interface Article {
+    id: number;
+    title: string;
+    slug: string;
+    content: string;
+    excerpt?: string;
+    featured_image?: string;
+    featured_image_url?: string;
+    status: 'draft' | 'published' | 'archived';
+    published_at?: string;
+    meta_title?: string;
+    meta_description?: string;
+    created_at: string;
+    updated_at: string;
+    deleted_at?: string;
+}
+
 // API Response types
 export interface ApiResponse<T> {
     data: T;

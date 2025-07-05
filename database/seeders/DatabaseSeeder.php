@@ -21,5 +21,6 @@ class DatabaseSeeder extends Seeder
         $this->call(VarianSeeder::class);
         $this->call(StokMobilSeeder::class);
         $this->call(RiwayatServisSeeder::class);
+        $this->call(ArticleSeeder::class);
     }
 }

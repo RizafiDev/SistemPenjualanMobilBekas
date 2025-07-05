@@ -7,6 +7,7 @@ import type { Mobil, FotoMobil } from "./types";
 
 // API Endpoints
 export const API_ENDPOINTS = {
+    ARTICLES: "/articles", // ✅ Added articles endpoint
     FOTO_MOBILS: "/foto-mobils",
     JANJI_TEMUS: "/janji-temus",
     KATEGORIS: "/kategoris",

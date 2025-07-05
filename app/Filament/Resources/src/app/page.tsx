@@ -6,8 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CarSearch from "@/components/car/car-search";
 import StockCarCard from "@/components/car/stock-car-card";
-import { useCatalog, useMereks } from "@/lib/hooks";
-import type { StokMobil, Merek } from "@/lib/types";
+import { useCatalog, useMereks, useLatestArticles } from "@/lib/hooks";
+import type { StokMobil, Merek, Article } from "@/lib/types";
 import {
   Car,
   Shield,
@@ -22,6 +22,137 @@ import {
   Search,
 } from "lucide-react";
 import type { CarSearchFilters } from "@/lib/validations";
+import { formatDistanceToNow } from "date-fns";
+import { id } from "date-fns/locale";
+import { useState } from "react";
+
+function ArticlesOverview() {
+  const { data: articlesData, isLoading, error } = useLatestArticles(6);
+
+  const formatDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: id,
+      });
+    } catch {
+      return "Tanggal tidak valid";
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              📰 Artikel & Tips Otomotif
+            </h2>
+            <div className="h-4 bg-gray-300 rounded mx-auto w-96 animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="bg-gray-300 h-48 rounded-lg mb-4"></div>
+                <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error || !articlesData?.data?.length) {
+    return null; // Don't show section if no articles
+  }
+
+  const articles = articlesData.data;
+
+  return (
+    <section className="py-16 bg-gray-50">
+      <div className="container mx-auto px-4">
+        {/* Section Header */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            📰 Artikel & Tips Otomotif
+          </h2>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Baca artikel terbaru seputar tips perawatan mobil, panduan pembelian,
+            dan informasi otomotif lainnya untuk membantu Anda.
+          </p>
+        </div>
+
+        {/* Articles Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {articles.map((article: Article) => (
+            <Link
+              key={article.id}
+              href={`/articles/${article.slug}`}
+              className="group"
+            >
+              <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                {/* Featured Image */}
+                <div className="relative h-48 bg-gray-200">
+                  {article.featured_image_url ? (
+                    <Image
+                      src={article.featured_image_url}
+                      alt={article.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <div className="text-4xl mb-2">📰</div>
+                        <p className="text-sm">Tidak ada gambar</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                    {article.title}
+                  </h3>
+
+                  {article.excerpt && (
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {article.excerpt}
+                    </p>
+                  )}
+
+                  <div className="flex items-center justify-between text-xs text-gray-500">
+                    <span className="flex items-center gap-1">
+                      🕒{" "}
+                      {formatDate(article.published_at || article.created_at)}
+                    </span>
+                    <span className="text-blue-600 font-medium group-hover:underline">
+                      Baca &rarr;
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* View All Articles Button */}
+        <div className="text-center">
+          <Link
+            href="/articles"
+            className="inline-flex items-center gap-2 px-8 py-3 bg-white border-2 border-blue-600 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors font-medium"
+          >
+            📚 Lihat Semua Artikel
+            <span>→</span>
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage() {
   const { data: stockCarsData } = useCatalog({ page: 1 }); // Ambil stok mobil yang tersedia
