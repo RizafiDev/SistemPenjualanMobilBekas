@@ -16,8 +16,8 @@ use App\Http\Controllers\PenggajianController;
 
 // Default login route untuk Laravel auth system
 Route::get('/', function () {
-    return redirect()->route('karyawan.login');
-})->name('login');
+    return redirect()->route('karyawan.absensi.index');
+})->name('absensi');
 
 // Default login route untuk Laravel auth system
 Route::get('/login', function () {
