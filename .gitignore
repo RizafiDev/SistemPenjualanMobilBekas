@@ -24,3 +24,21 @@ Homestead.yaml
 Thumbs.db
 /aafrontend
 /FeSistemPenjualanMobilBekas
+
+# Tambahan yang mungkin perlu diignore:
+/bootstrap/cache/*.php
+/storage/app/public/uploads/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/public/uploads/*
+/public/images/*
+*.sql
+*.dump
+*.zip
+*.tar.gz
+*.rar
+composer.lock
+package-lock.json
+yarn.lock
