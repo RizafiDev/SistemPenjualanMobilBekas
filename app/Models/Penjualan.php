@@ -395,36 +395,36 @@ class Penjualan extends Model
     }
 
     // Method untuk generate nomor faktur
-    private function generateNoFaktur(): string
-    {
-        $date = Carbon::now();
-        $prefix = 'INV';
-        $yearMonth = $date->format('Ym');
+    public static function generateNoFaktur(): string
+{
+    $date = Carbon::now();
+    $prefix = 'INV';
+    $yearMonth = $date->format('Ym');
 
-        return \DB::transaction(function () use ($prefix, $yearMonth) {
-            $lastPenjualan = self::where('no_faktur', 'like', $prefix . $yearMonth . '%')
-                ->lockForUpdate()
-                ->orderBy('no_faktur', 'desc')
-                ->first();
+    return \DB::transaction(function () use ($prefix, $yearMonth) {
+        $lastPenjualan = self::where('no_faktur', 'like', $prefix . $yearMonth . '%')
+            ->lockForUpdate()
+            ->orderBy('no_faktur', 'desc')
+            ->first();
 
-            if ($lastPenjualan) {
-                $lastNumber = (int) substr($lastPenjualan->no_faktur, -4);
-                $newNumber = $lastNumber + 1;
-            } else {
-                $newNumber = 1;
-            }
+        if ($lastPenjualan) {
+            $lastNumber = (int) substr($lastPenjualan->no_faktur, -4);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
 
+        $newNoFaktur = $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+
+        // Double check untuk memastikan nomor belum ada
+        while (self::where('no_faktur', $newNoFaktur)->exists()) {
+            $newNumber++;
             $newNoFaktur = $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
+        }
 
-            // Double check untuk memastikan nomor belum ada
-            while (self::where('no_faktur', $newNoFaktur)->exists()) {
-                $newNumber++;
-                $newNoFaktur = $prefix . $yearMonth . str_pad($newNumber, 4, '0', STR_PAD_LEFT);
-            }
-
-            return $newNoFaktur;
-        });
-    }
+        return $newNoFaktur;
+    });
+}
 
     // Method untuk mendapatkan ringkasan pembayaran
     public function getPaymentSummary(): array
