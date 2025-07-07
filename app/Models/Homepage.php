@@ -9,7 +9,7 @@ class Homepage extends Model
 {
     use HasFactory;
 
-    protected $table = 'Homepages';
+    protected $table = 'homepages';
     protected $fillable = [
         'pelanggan_puas',
         'rating_puas',
