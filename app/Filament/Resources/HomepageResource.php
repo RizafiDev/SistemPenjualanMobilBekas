@@ -18,6 +18,7 @@ class HomepageResource extends Resource
     protected static ?string $model = Homepage::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Content Management';
 
     // Tambahkan method untuk disable create button
     public static function canCreate(): bool
@@ -45,7 +46,7 @@ class HomepageResource extends Resource
                     ->label('Foto Homepage')
                     ->multiple()
                     ->image()
-                    ->directory('mobil/kondisi')
+                    ->directory('homepage')
                     ->preserveFilenames()
                     ->enableReordering()
                     ->enableDownload()

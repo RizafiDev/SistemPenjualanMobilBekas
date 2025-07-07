@@ -25,6 +25,8 @@ class ArticleResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Articles';
 
+    protected static ?string $navigationGroup = 'Content Management';
+
     public static function form(Form $form): Form
     {
         return $form

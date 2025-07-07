@@ -69,8 +69,6 @@ class ApiKeyResource extends Resource
                     ->label('Name')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('key')
-                    ->label('Key'),
                 Tables\Columns\BadgeColumn::make('is_active')
                     ->label('Status')
                     ->getStateUsing(function (ApiKey $record) {
